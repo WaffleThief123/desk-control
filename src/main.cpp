@@ -4,9 +4,11 @@
 #include "config.h"
 #include "ranging.h"
 #include "desk.h"
+#include "buttons.h"
 
 void setup() {
     deskSetup();
+    buttonsSetup();
 
     Serial.begin(115200);
     while (!Serial) delay(10);
