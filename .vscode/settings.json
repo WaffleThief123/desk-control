@@ -1,0 +1,9 @@
+{
+    "cmake.configureOnOpen": false,
+    "files.associations": {
+        "time.h": "c",
+        "esp32-hal-tinyusb.h": "c",
+        "tusb.h": "c",
+        "esp32-hal.h": "c"
+    }
+}
