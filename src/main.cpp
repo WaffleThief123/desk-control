@@ -11,8 +11,6 @@ void setup() {
     buttonsSetup();
 
     Serial.begin(115200);
-    while (!Serial) delay(10);
-    while (Serial.readStringUntil('\n').length() <= 0) delay(10);
     Serial.println("Booting...");
 
     WiFi.mode(WIFI_STA);
