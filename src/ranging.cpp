@@ -8,21 +8,15 @@ Adafruit_VL53L1X vl53 = Adafruit_VL53L1X();
 
 static int16_t lastValue = -1;
 static unsigned long lastValueTime = -1;
+static bool isRanging = false;
 
-void rangingSetup() {
-    Wire.setPins(PIN_SDA, PIN_SCL);
-    Wire.begin();
-
+static void rangingSensorInit() {
     if (!vl53.begin(0x29, &Wire)) {
         Serial.println("VL53L1X init failed: ");
         Serial.println(vl53.vl_status);
     }
 
-    Serial.print("Sensor ID: 0x");
-    Serial.println(vl53.sensorID(), HEX);
-
-    vl53.stopRanging();
-    vl53.clearInterrupt();
+    rangingStop();
 
 #ifdef RANGING_DISTANCE_MODE
     vl53.VL53L1X_SetDistanceMode(RANGING_DISTANCE_MODE);
@@ -38,23 +32,46 @@ void rangingSetup() {
 #endif
 }
 
+void rangingSetup() {
+    Wire.setPins(PIN_SDA, PIN_SCL);
+    Wire.begin();
+    rangingSensorInit();
+}
+
 void rangingStart() {
     lastValue = -1;
     lastValueTime = -1;
+    vl53.clearInterrupt();
     vl53.startRanging();
+    isRanging = true;
 }
 
 void rangingStop() {
+    isRanging = false;
     vl53.stopRanging();
+    vl53.clearInterrupt();
     lastValue = -1;
     lastValueTime = -1;
 }
 
 void rangingLoop() {
+    if (!isRanging) {
+        return;
+    }
+
     if (vl53.dataReady()) {
-        lastValue = vl53.distance();
+        lastValue = vl53.distance();     
         lastValueTime = millis();
         vl53.clearInterrupt();
+    } else {
+        uint8_t tmp = 0;
+        vl53.VL53L1X_GetRangeStatus(&tmp);
+        if (tmp) {
+            rangingStop();
+            vl53.end();
+            rangingSensorInit();
+            rangingStart();
+        }
     }
 }
 
@@ -66,12 +83,18 @@ static void rangingCheckTimeout() {
 }
 
 int16_t rangingGetDistance() {
+    if (!isRanging) {
+        return -2;
+    }
     rangingCheckTimeout();
 
     return lastValue;
 }
 
 int16_t rangingWaitAndGetDistance() {
+    if (!isRanging) {
+        return -2;
+    }
     rangingCheckTimeout();
 
     while (lastValue < 0) {

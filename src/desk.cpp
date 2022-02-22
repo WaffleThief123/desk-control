@@ -69,7 +69,6 @@ void deskAdjustHeight(int16_t _target) {
 static void deskMoveEnd(const String& reason) {
     deskStop();
 
-
     Serial.print("Desk height adjusted to ");
     Serial.print(rangingWaitAndGetDistance());
     Serial.print(" within ");
