@@ -8,9 +8,6 @@
 #include "serial.h"
 
 void setup() {
-    pinMode(21, OUTPUT);
-    digitalWrite(21, HIGH);
-
     deskSetup();
     buttonsSetup();
 
