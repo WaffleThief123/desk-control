@@ -6,6 +6,9 @@
 
 Adafruit_VL53L1X vl53 = Adafruit_VL53L1X();
 
+static int16_t lastValue = -1;
+static unsigned long lastValueTime = -1;
+
 void rangingSetup() {
     Wire.setPins(PIN_SDA, PIN_SCL);
     Wire.begin();
@@ -36,26 +39,33 @@ void rangingSetup() {
 }
 
 void rangingStart() {
+    lastValue = -1;
+    lastValueTime = -1;
     vl53.startRanging();
 }
 
 void rangingStop() {
     vl53.stopRanging();
+    lastValue = -1;
+    lastValueTime = -1;
+}
+
+void rangingLoop() {
+    if (vl53.dataReady()) {
+        lastValue = vl53.distance();
+        lastValueTime = millis();
+        vl53.clearInterrupt();
+    }
 }
 
 int16_t rangingGetDistance() {
-    if (!vl53.dataReady()) {
-        return -1;
-    }
-    int16_t res = vl53.distance();
-    vl53.clearInterrupt();
-    return res;
+    return lastValue;
 }
 
 int16_t rangingWaitAndGetDistance() {
-    int16_t distance = -1;
-    while (distance == -1) {
-        distance = rangingGetDistance();
+    while (lastValue < 0) {
+        rangingLoop();
+        delay(1);
     }
-    return distance;
+    return lastValue;
 }

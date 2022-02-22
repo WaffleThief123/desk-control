@@ -4,3 +4,4 @@
 
 void deskSetup();
 void deskAdjustHeight(int16_t target);
+void deskLoop();
