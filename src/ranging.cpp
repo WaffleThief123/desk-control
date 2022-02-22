@@ -18,7 +18,21 @@ void rangingSetup() {
     Serial.print("Sensor ID: 0x");
     Serial.println(vl53.sensorID(), HEX);
 
-    vl53.setTimingBudget(50);
+    vl53.stopRanging();
+    vl53.clearInterrupt();
+
+#ifdef RANGING_DISTANCE_MODE
+    vl53.VL53L1X_SetDistanceMode(RANGING_DISTANCE_MODE);
+#endif
+
+#ifdef RANGING_TIMING_BUDGET
+    vl53.setTimingBudget(RANGING_TIMING_BUDGET);
+#endif
+
+#ifdef RANGING_ROI_CENTER
+    vl53.VL53L1X_SetROICenter(RANGING_ROI_CENTER);
+    vl53.VL53L1X_SetROI(RANGING_ROI_WIDTH, RANGING_ROI_HEIGHT);
+#endif
 }
 
 void rangingStart() {
@@ -30,10 +44,18 @@ void rangingStop() {
 }
 
 int16_t rangingGetDistance() {
-    while (!vl53.dataReady()) {
-        delay(1);
+    if (!vl53.dataReady()) {
+        return -1;
     }
     int16_t res = vl53.distance();
     vl53.clearInterrupt();
     return res;
+}
+
+int16_t rangingWaitAndGetDistance() {
+    int16_t distance = -1;
+    while (distance == -1) {
+        distance = rangingGetDistance();
+    }
+    return distance;
 }

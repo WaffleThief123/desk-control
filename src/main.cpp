@@ -7,6 +7,9 @@
 #include "buttons.h"
 
 void setup() {
+    pinMode(21, OUTPUT);
+    digitalWrite(21, HIGH);
+
     deskSetup();
     buttonsSetup();
 
@@ -31,9 +34,29 @@ void setup() {
 }
 
 void loop() {
-    rangingStart();
-    int16_t distance = rangingGetDistance();
-    rangingStop();
-    Serial.print("Ranging ");
-    Serial.println(distance);
+    String str = Serial.readStringUntil('\n');
+    if (str.length() <= 0) {
+        delay(100);
+        return;
+    }
+    str.trim();
+    str.toLowerCase();
+
+    if (str.equals("range")) {
+        rangingStart();
+        while (!Serial.available()) {
+            const int16_t distance = rangingGetDistance();
+            if (distance >= 0) {
+                Serial.println(distance);
+            }
+            delay(1);
+        }
+        rangingStop();
+        return;
+    }
+
+    int16_t targetHeight = str.toInt();
+    if (targetHeight > 100 && targetHeight < 1500) {
+        deskAdjustHeight(targetHeight);
+    }
 }
