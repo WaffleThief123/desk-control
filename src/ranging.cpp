@@ -58,11 +58,22 @@ void rangingLoop() {
     }
 }
 
+static void rangingCheckTimeout() {
+    if (lastValue >= 0 && millis() - lastValueTime > RANGING_TIMEOUT) {
+        lastValue = -1;
+        lastValueTime = -1;
+    }
+}
+
 int16_t rangingGetDistance() {
+    rangingCheckTimeout();
+
     return lastValue;
 }
 
 int16_t rangingWaitAndGetDistance() {
+    rangingCheckTimeout();
+
     while (lastValue < 0) {
         rangingLoop();
         delay(1);
