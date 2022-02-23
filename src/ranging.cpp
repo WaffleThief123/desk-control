@@ -28,6 +28,8 @@ static void rangingSensorInit() {
 
 #ifdef RANGING_ROI_CENTER
     vl53.VL53L1X_SetROICenter(RANGING_ROI_CENTER);
+#endif
+#ifdef RANGING_ROI_WIDTH
     vl53.VL53L1X_SetROI(RANGING_ROI_WIDTH, RANGING_ROI_HEIGHT);
 #endif
 }
@@ -67,6 +69,9 @@ void rangingLoop() {
         uint8_t tmp = 0;
         vl53.VL53L1X_GetRangeStatus(&tmp);
         if (tmp) {
+            Serial.print("Ranging error [");
+            Serial.print(tmp);
+            Serial.println("] restarting sensor");
             rangingStop();
             vl53.end();
             rangingSensorInit();
