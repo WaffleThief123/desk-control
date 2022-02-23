@@ -51,6 +51,9 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId) {
 
     timeout = abs(target - startDistance) * DESK_ADJUST_TIMEOUT_PER_MM;
 
+    goingUp = target > startDistance;
+    deskMoving = goingUp ? 1 : -1;
+
     mqttSendJSON(mqttId, "adjust:start", "");
 
     if (abs(target - startDistance) < DESK_HEIGHT_TOLERANCE) {
@@ -60,7 +63,6 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId) {
         return;
     }
 
-    goingUp = target > startDistance;
     if (goingUp) {
         digitalWrite(PIN_RELAY_DOWN, LOW);
         digitalWrite(PIN_RELAY_UP, HIGH);
@@ -73,7 +75,6 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId) {
     speedLastDistance = startDistance;
     speedLastTime = startTime;
     rangingLastTime = startTime;
-    deskMoving = goingUp ? 1 : -1;
 }
 
 static void deskMoveEnd(const String& reason) {
@@ -158,4 +159,8 @@ void deskLoop() {
 
 int8_t deskIsMoving() {
     return deskMoving;
+}
+
+int16_t deskGetTarget() {
+    return target;
 }

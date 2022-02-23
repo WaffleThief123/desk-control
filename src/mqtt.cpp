@@ -17,7 +17,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int len) {
     memcpy(str, payload, len);
     str[len] = 0;
 
-    DynamicJsonDocument doc(64);
+    DynamicJsonDocument doc(256);
     deserializeJson(doc, str);
 
     const char *id = doc["id"].as<const char*>();
@@ -85,6 +85,11 @@ void mqttSendJSON(const char* mqttId, const char* type, const char* data, int16_
     if (range == -999) {
         range = rangingWaitAndGetDistance();
     }
+    const int8_t moving = deskIsMoving();
+    int16_t target = deskGetTarget();
+    if (target <= 0) {
+        target = range;
+    }
 
     Serial.print("<");
     Serial.print(type);
@@ -92,18 +97,26 @@ void mqttSendJSON(const char* mqttId, const char* type, const char* data, int16_
     Serial.print(data);
     Serial.print(" [");
     Serial.print(range);
+    Serial.print(" => ");
+    Serial.print(target);
+    Serial.print(" @ ");
+    Serial.print(moving);
     Serial.println("]");
 
-    String buf;
+    char buf[256];
 
-    StaticJsonDocument<64> doc;
+    StaticJsonDocument<256> doc;
     if (mqttId && mqttId[0]) {
         doc["id"] = mqttId;
     }
     doc["type"] = type;
     doc["data"] = data;
     doc["range"] = range;
-    serializeJson(doc, buf);
+    doc["moving"] = moving;
+    doc["target"] = target;
+    int len = serializeJson(doc, buf);
 
-    mqttSend(buf.c_str());
+    buf[len] = 0;
+
+    mqttSend(buf);
 }
