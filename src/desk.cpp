@@ -15,11 +15,11 @@ static int16_t speedLastDistance;
 static unsigned long speedLastTime;
 static unsigned long rangingLastTime;
 static int16_t target;
-static bool deskMoving;
+static int8_t deskMoving;
 static char mqttId[128];
 
 static void deskStopInternal() {
-    deskMoving = false;
+    deskMoving = 0;
     digitalWrite(PIN_RELAY_UP, LOW);
     digitalWrite(PIN_RELAY_DOWN, LOW);
 }
@@ -73,7 +73,7 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId) {
     speedLastDistance = startDistance;
     speedLastTime = startTime;
     rangingLastTime = startTime;
-    deskMoving = true;
+    deskMoving = goingUp ? 1 : -1;
 }
 
 static void deskMoveEnd(const String& reason) {
@@ -156,6 +156,6 @@ void deskLoop() {
     }
 }
 
-bool deskIsMoving() {
+int8_t deskIsMoving() {
     return deskMoving;
 }
