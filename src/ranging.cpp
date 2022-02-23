@@ -52,8 +52,6 @@ void rangingStop() {
     isRanging = false;
     vl53.stopRanging();
     vl53.clearInterrupt();
-    lastValue = -1;
-    lastValueTime = -1;
 }
 
 void rangingLoop() {
@@ -97,14 +95,21 @@ int16_t rangingGetDistance() {
 }
 
 int16_t rangingWaitAndGetDistance() {
+    const bool wasRanging = isRanging;
     if (!isRanging) {
-        return -2;
+        rangingStart();
     }
+
     rangingCheckTimeout();
 
     while (lastValue < 0) {
         rangingLoop();
         delay(1);
     }
+
+    if (!wasRanging) {
+        rangingStop();
+    }
+
     return lastValue;
 }

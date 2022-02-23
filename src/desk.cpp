@@ -1,8 +1,10 @@
 #include <Arduino.h>
+#include <ArduinoJson.h>
 
 #include "desk.h"
 #include "config.h"
 #include "ranging.h"
+#include "mqtt.h"
 
 static int16_t startDistance;
 static unsigned long timeout;
@@ -14,8 +16,9 @@ static unsigned long speedLastTime;
 static unsigned long rangingLastTime;
 static int16_t target;
 static bool deskMoving;
+static char mqttId[128];
 
-static void deskStop() {
+static void deskStopInternal() {
     deskMoving = false;
     digitalWrite(PIN_RELAY_UP, LOW);
     digitalWrite(PIN_RELAY_DOWN, LOW);
@@ -24,10 +27,17 @@ static void deskStop() {
 void deskSetup() {
     pinMode(PIN_RELAY_UP, OUTPUT);
     pinMode(PIN_RELAY_DOWN, OUTPUT);
-    deskStop();
+    deskStopInternal();
 }
 
-void deskAdjustHeight(int16_t _target) {
+void deskAdjustHeight(int16_t _target, const char *_mqttId) {
+    deskStop();
+
+    strcpy(mqttId, _mqttId);
+    if (_target < DESK_HEIGHT_MIN || _target > DESK_HEIGHT_MAX) {
+        return;
+    }
+
     target = _target;
     startTime = millis();
 
@@ -36,17 +46,12 @@ void deskAdjustHeight(int16_t _target) {
 
     timeout = abs(target - startDistance) * DESK_ADJUST_TIMEOUT_PER_MM;
 
-    Serial.print("Adjusting desk height to ");
-    Serial.print(target);
-    Serial.print(" from ");
-    Serial.print(startDistance);
-    Serial.print(" with timeout ");
-    Serial.println(timeout);
+    mqttSendJSON(mqttId, "adjust:start", "");
 
     if (abs(target - startDistance) < DESK_HEIGHT_TOLERANCE) {
-        deskStop();
+        deskStopInternal();
         rangingStop();
-        Serial.println("Desk already at desired height!");
+        mqttSendJSON(mqttId, "adjust:stop", "NO CHANGE");
         return;
     }
 
@@ -67,18 +72,19 @@ void deskAdjustHeight(int16_t _target) {
 }
 
 static void deskMoveEnd(const String& reason) {
-    deskStop();
+    deskStopInternal();
 
-    const int16_t distance = rangingWaitAndGetDistance();
-    Serial.print("Desk height adjusted to ");
-    Serial.print(distance);
-    Serial.print(" within ");
-    Serial.print(millis() - startTime);
-    Serial.print(" (");
-    Serial.print(reason);
-    Serial.println(")");
+    mqttSendJSON(mqttId, "adjust:stop", reason.c_str());
 
+    mqttId[0] = 0;
     rangingStop();
+}
+
+void deskStop() {
+    if (!deskMoving) {
+        return;
+    }
+    deskMoveEnd("STOPPED");
 }
 
 void deskLoop() {
@@ -128,4 +134,8 @@ void deskLoop() {
         deskMoveEnd("OVERSHOOT");
         return;
     }
+}
+
+bool deskIsMoving() {
+    return deskMoving;
 }

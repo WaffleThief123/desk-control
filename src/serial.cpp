@@ -2,6 +2,7 @@
 
 #include "ranging.h"
 #include "desk.h"
+#include "mqtt.h"
 
 String serialBuffer;
 
@@ -21,13 +22,11 @@ static void serialHandleCommand()
 
     if (serialBuffer.equals("range"))
     {
-        rangingStart();
-        Serial.print(rangingWaitAndGetDistance());
-        rangingStop();
+        mqttSendJSON({ 0 }, "range", "OK");
     }
     else if (serialBuffer.startsWith("adjust "))
     {
-        deskAdjustHeight(serialBuffer.substring(7).toInt());
+        deskAdjustHeight(serialBuffer.substring(7).toInt(), { 0 });
     }
     else
     {

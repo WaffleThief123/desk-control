@@ -6,6 +6,7 @@
 #include "desk.h"
 #include "buttons.h"
 #include "serial.h"
+#include "mqtt.h"
 
 void setup() {
     deskSetup();
@@ -28,6 +29,8 @@ void setup() {
 
     rangingSetup();
 
+    mqttSetup();
+
     Serial.println("Boot complete");
 }
 
@@ -35,4 +38,5 @@ void loop() {
     serialLoop();
     rangingLoop();
     deskLoop();
+    mqttLoop();
 }
