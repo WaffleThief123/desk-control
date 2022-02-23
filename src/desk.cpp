@@ -25,8 +25,6 @@ static void deskStopInternal() {
 }
 
 void deskSetup() {
-    pinMode(PIN_RELAY_UP, INPUT);
-    pinMode(PIN_RELAY_DOWN, INPUT);
     pinMode(PIN_RELAY_UP, OUTPUT);
     pinMode(PIN_RELAY_DOWN, OUTPUT);
     deskStopInternal();
