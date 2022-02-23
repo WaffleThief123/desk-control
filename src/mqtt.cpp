@@ -81,8 +81,10 @@ void mqttSend(const char* data) {
     mqttClient.publish(MQTT_TOPIC_PUB, data);
 }
 
-void mqttSendJSON(const char* mqttId, const char* type, const char* data) {
-    const int16_t range = rangingWaitAndGetDistance();
+void mqttSendJSON(const char* mqttId, const char* type, const char* data, int16_t range) {
+    if (range == -999) {
+        range = rangingWaitAndGetDistance();
+    }
 
     Serial.print("<");
     Serial.print(type);

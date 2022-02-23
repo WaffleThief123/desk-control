@@ -22,11 +22,11 @@ static void serialHandleCommand()
 
     if (serialBuffer.equals("range"))
     {
-        mqttSendJSON({ 0 }, "range", "OK");
+        mqttSendJSON(NULL, "range", "OK");
     }
     else if (serialBuffer.startsWith("adjust "))
     {
-        deskAdjustHeight(serialBuffer.substring(7).toInt(), { 0 });
+        deskAdjustHeight(serialBuffer.substring(7).toInt(), NULL);
     }
     else
     {

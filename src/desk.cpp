@@ -25,6 +25,8 @@ static void deskStopInternal() {
 }
 
 void deskSetup() {
+    pinMode(PIN_RELAY_UP, INPUT);
+    pinMode(PIN_RELAY_DOWN, INPUT);
     pinMode(PIN_RELAY_UP, OUTPUT);
     pinMode(PIN_RELAY_DOWN, OUTPUT);
     deskStopInternal();
@@ -33,7 +35,12 @@ void deskSetup() {
 void deskAdjustHeight(int16_t _target, const char *_mqttId) {
     deskStop();
 
-    strcpy(mqttId, _mqttId);
+    if (_mqttId) {
+        strcpy(mqttId, _mqttId);
+    } else {
+        mqttId[0] = 0;
+    }
+
     if (_target < DESK_HEIGHT_MIN || _target > DESK_HEIGHT_MAX) {
         return;
     }
@@ -87,15 +94,15 @@ void deskStop() {
     deskMoveEnd("STOPPED");
 }
 
-void deskLoop() {
+static inline bool deskLoopInternal() {
     if (!deskMoving) {
-        return;
+        return false;
     }
 
     const unsigned long time = millis();
     if (time - startTime > timeout) {
         deskMoveEnd("MAIN TIMEOUT");
-        return;
+        return false;
     }
 
     const int16_t distance = rangingGetDistance();
@@ -103,9 +110,13 @@ void deskLoop() {
         if (time - rangingLastTime > DESK_RANGING_TIMEOUT) {
             deskMoveEnd("RANGING TIMEOUT");
         }
-        return;
+        return false;
     }
     rangingLastTime = time;
+
+    const int16_t heightDiff = abs(target - distance);
+    const bool shouldGoUp = target > distance;
+    const bool inFineAdjust = heightDiff <= DESK_FINE_ADJUST_RANGE;
 
     if (time - speedLastTime >= DESK_CALCULATE_SPEED_TIME) {
         const double speed = abs((double)(distance - speedLastDistance) / (double)(time - speedLastTime));
@@ -116,23 +127,34 @@ void deskLoop() {
             failedSpeedTries++;
             if (failedSpeedTries >= DESK_SPEED_TRIES) {
                 deskMoveEnd("SPEED TO LOW");
-                return;
+                return false;
             }
         } else {
             failedSpeedTries = 0;
         }
+
+        if (!inFineAdjust) {
+            mqttSendJSON(mqttId, "adjust:move", String(speed).c_str(), distance);
+        }
     }
 
-    const int16_t heightDiff = target - distance;
-    if (abs(heightDiff) <= DESK_HEIGHT_TOLERANCE) {
+    if (heightDiff <= DESK_HEIGHT_TOLERANCE) {
         deskMoveEnd("OK");
-        return;
+        return false;
     }
 
-    const bool shouldGoUp = heightDiff > 0;
     if (shouldGoUp != goingUp) {
         deskMoveEnd("OVERSHOOT");
-        return;
+        return false;
+    }
+
+    return inFineAdjust;
+}
+
+void deskLoop() {
+    while (deskLoopInternal()) {
+        delay(1);
+        rangingLoop();
     }
 }
 
