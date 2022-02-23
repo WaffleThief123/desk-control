@@ -86,10 +86,7 @@ void mqttSendJSON(const char* mqttId, const char* type, const char* data, int16_
         range = rangingWaitAndGetDistance();
     }
     const int8_t moving = deskIsMoving();
-    int16_t target = deskGetTarget();
-    if (target <= 0) {
-        target = range;
-    }
+    const int16_t target = deskGetTarget();
 
     Serial.print("<");
     Serial.print(type);
