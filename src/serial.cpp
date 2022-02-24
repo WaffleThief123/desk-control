@@ -31,7 +31,7 @@ static void serialHandleCommand()
     Serial.println();
 }
 
-static void serialTask(void* parameter)
+static void serialTask(void *parameter)
 {
     while (1)
     {
@@ -54,7 +54,6 @@ static void serialTask(void* parameter)
         delay(10);
     }
 }
-
 
 void serialSetup()
 {

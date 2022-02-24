@@ -23,7 +23,7 @@ static void deskStopInternal()
     deskMoving = 0;
     digitalWrite(PIN_RELAY_UP, LOW);
     digitalWrite(PIN_RELAY_DOWN, LOW);
-} 
+}
 
 void deskStop()
 {
@@ -154,7 +154,7 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
 
     timeout = abs(target - startDistance) * DESK_ADJUST_TIMEOUT_PER_MM;
 
-    deskMoving = (target > startDistance)  ? 1 : -1;
+    deskMoving = (target > startDistance) ? 1 : -1;
 
     mqttSendJSON(mqttId, "adjust:start", "");
 
