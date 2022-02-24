@@ -64,14 +64,18 @@ bool mqttEnsureConnected() {
     return true;
 }
 
-void mqttSetup() {
-    mqttEnsureConnected();
+static void mqttLoopTask(void* parameter) {
+    while (1) {
+        if (mqttEnsureConnected()) {
+            mqttClient.loop();
+        }
+        delay(10);
+    }
 }
 
-void mqttLoop() {
-    if (mqttEnsureConnected()) {
-        mqttClient.loop();
-    }
+void mqttSetup() {
+    mqttEnsureConnected();
+    xTaskCreate(mqttLoopTask, "mqttLoop", RTOS_STACK_SIZE, NULL, 1, NULL);
 }
 
 void mqttSend(const char* data) {

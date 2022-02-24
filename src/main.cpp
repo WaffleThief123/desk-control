@@ -8,7 +8,10 @@
 #include "serial.h"
 #include "mqtt.h"
 
-void setup() {
+void setup()
+{
+    Serial0.begin(115200);
+
     deskSetup();
     buttonsSetup();
 
@@ -34,9 +37,7 @@ void setup() {
     Serial.println("Boot complete");
 }
 
-void loop() {
-    serialLoop();
-    rangingLoop();
-    deskLoop();
-    mqttLoop();
+void loop()
+{
+    delay(1000);
 }

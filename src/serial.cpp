@@ -3,14 +3,9 @@
 #include "ranging.h"
 #include "desk.h"
 #include "mqtt.h"
+#include "config.h"
 
 String serialBuffer;
-
-void serialSetup()
-{
-    serialBuffer.reserve(128);
-    Serial.begin(115200);
-}
 
 static void serialHandleCommand()
 {
@@ -36,22 +31,34 @@ static void serialHandleCommand()
     Serial.println();
 }
 
-void serialLoop()
+static void serialTask(void* parameter)
 {
-    while (Serial && Serial.available())
+    while (1)
     {
-        char c = Serial.read();
-        if (c == '\n' || c == '\r')
+        while (Serial && Serial.available())
         {
-            if (serialBuffer.length() > 0)
+            char c = Serial.read();
+            if (c == '\n' || c == '\r')
             {
-                serialHandleCommand();
-                serialBuffer = "";
+                if (serialBuffer.length() > 0)
+                {
+                    serialHandleCommand();
+                    serialBuffer = "";
+                }
+            }
+            else
+            {
+                serialBuffer += c;
             }
         }
-        else
-        {
-            serialBuffer += c;
-        }
+        delay(10);
     }
+}
+
+
+void serialSetup()
+{
+    serialBuffer.reserve(128);
+    Serial.begin(115200);
+    xTaskCreate(serialTask, "serial", RTOS_STACK_SIZE, NULL, 2, NULL);
 }
