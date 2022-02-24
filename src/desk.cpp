@@ -5,6 +5,7 @@
 #include "config.h"
 #include "ranging.h"
 #include "mqtt.h"
+#include "util.h"
 
 static int16_t startDistance;
 static unsigned long timeout;
@@ -180,7 +181,7 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
     speedLastTime = startTime;
     rangingLastTime = startTime;
 
-    xTaskCreate(deskMoveTask, "deskMove", RTOS_STACK_SIZE, NULL, 10, &moveTaskHandle);
+    CREATE_TASK(deskMoveTask, "deskMove", 10, &moveTaskHandle);
 }
 
 int8_t deskIsMoving()

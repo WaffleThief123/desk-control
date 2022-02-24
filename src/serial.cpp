@@ -4,6 +4,7 @@
 #include "desk.h"
 #include "mqtt.h"
 #include "config.h"
+#include "util.h"
 
 String serialBuffer;
 
@@ -59,5 +60,5 @@ void serialSetup()
 {
     serialBuffer.reserve(128);
     Serial.begin(115200);
-    xTaskCreate(serialTask, "serial", RTOS_STACK_SIZE, NULL, 2, NULL);
+    CREATE_TASK(serialTask, "serial", 2, NULL);
 }

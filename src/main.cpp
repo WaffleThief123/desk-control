@@ -10,8 +10,6 @@
 
 void setup()
 {
-    Serial0.begin(115200);
-
     deskSetup();
     buttonsSetup();
 

@@ -3,6 +3,7 @@
 #include "config.h"
 #include "desk.h"
 #include "ranging.h"
+#include "util.h"
 
 #include <Arduino.h>
 #include <PubSubClient.h>
@@ -92,7 +93,7 @@ static void mqttLoopTask(void *parameter)
 void mqttSetup()
 {
     mqttEnsureConnected();
-    xTaskCreate(mqttLoopTask, "mqttLoop", RTOS_STACK_SIZE, NULL, 1, NULL);
+    CREATE_TASK(mqttLoopTask, "mqttLoop", 1, NULL);
 }
 
 void mqttSend(const char *data)

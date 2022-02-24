@@ -3,6 +3,7 @@
 
 #include "ranging.h"
 #include "config.h"
+#include "util.h"
 
 #define RANGING_UNUSED_TIMEOUT 2000
 
@@ -108,7 +109,7 @@ static void rangingChecks()
 
     if (!rangingTaskHandle)
     {
-        xTaskCreate(rangingTask, "ranging", RTOS_STACK_SIZE, NULL, 5, &rangingTaskHandle);
+        CREATE_TASK(rangingTask, "ranging", 5, &rangingTaskHandle);
     }
 }
 
