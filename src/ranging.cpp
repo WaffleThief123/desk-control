@@ -30,7 +30,7 @@ static void rangingSensorInit()
 {
     if (!vl53.begin(0x29, &Wire))
     {
-        Serial.println("VL53L1X init failed: ");
+        Serial.print("VL53L1X init failed: ");
         Serial.println(vl53.vl_status);
     }
 
@@ -84,6 +84,9 @@ void rangingTask(void *parameter)
             vl53.VL53L1X_GetRangeStatus(&tmp);
             if (tmp)
             {
+                Serial.print("VL53L1X error status: ");
+                Serial.println(tmp);
+
                 rangingStop();
                 vl53.end();
                 rangingSensorInit();

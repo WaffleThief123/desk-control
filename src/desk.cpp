@@ -18,6 +18,7 @@ static int16_t target;
 static int8_t deskMoving;
 static char mqttId[128];
 static TaskHandle_t moveTaskHandle;
+static TaskHandle_t moveStatusTaskHandle;
 
 static void deskStopInternal()
 {
@@ -29,6 +30,11 @@ static void deskStopInternal()
 void deskStop()
 {
     deskStopInternal();
+    if (moveStatusTaskHandle)
+    {
+        vTaskDelete(moveStatusTaskHandle);
+        moveStatusTaskHandle = NULL;
+    }
     if (moveTaskHandle)
     {
         vTaskDelete(moveTaskHandle);
@@ -79,7 +85,6 @@ void deskMoveTask(void *parameter)
 
         const int16_t heightDiff = abs(target - distance);
         const int8_t shouldMoveDirection = (target > distance) ? 1 : -1;
-        const bool inFineAdjust = heightDiff <= DESK_FINE_ADJUST_RANGE;
 
         if (time - speedLastTime >= DESK_CALCULATE_SPEED_TIME)
         {
@@ -99,11 +104,6 @@ void deskMoveTask(void *parameter)
             else
             {
                 failedSpeedTries = 0;
-            }
-
-            if (!inFineAdjust)
-            {
-                mqttSendJSON(mqttId, "adjust:move", String(speed).c_str(), distance);
             }
         }
 
@@ -127,6 +127,21 @@ void deskMoveTask(void *parameter)
 
     mqttId[0] = 0;
 
+    vTaskDelete(NULL);
+}
+
+void deskMoveStatusTask(void* parameter)
+{
+    delay(1000);
+
+    while (deskMoving)
+    {
+        const int16_t distance = rangingWaitAndGetDistance();
+        mqttSendJSON(mqttId, "adjust:move", "OK", distance);
+        delay(1000);
+    }
+
+    moveStatusTaskHandle = NULL;
     vTaskDelete(NULL);
 }
 
@@ -182,6 +197,7 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
     rangingLastTime = startTime;
 
     CREATE_TASK(deskMoveTask, "deskMove", 10, &moveTaskHandle);
+    CREATE_TASK_IO(deskMoveStatusTask, "deskMoveStatus", 1, &moveStatusTaskHandle);
 }
 
 int8_t deskIsMoving()

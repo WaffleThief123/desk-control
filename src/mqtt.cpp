@@ -56,11 +56,6 @@ bool mqttEnsureConnected()
         return false;
     }
 
-    if (deskIsMoving())
-    {
-        return false;
-    }
-
     mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
     mqttClient.setCallback(mqttCallback);
     String clientId = WIFI_HOSTNAME "-" + String(WiFi.macAddress());
@@ -93,7 +88,7 @@ static void mqttLoopTask(void *parameter)
 void mqttSetup()
 {
     mqttEnsureConnected();
-    CREATE_TASK(mqttLoopTask, "mqttLoop", 1, NULL);
+    CREATE_TASK_IO(mqttLoopTask, "mqttLoop", 1, NULL);
 }
 
 void mqttSend(const char *data)
