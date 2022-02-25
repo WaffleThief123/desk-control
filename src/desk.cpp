@@ -137,7 +137,7 @@ void deskMoveStatusTask(void* parameter)
     while (deskMoving)
     {
         const int16_t distance = rangingWaitAndGetDistance();
-        mqttSendJSON(mqttId, "adjust:move", "OK", distance);
+        mqttSendJSON(mqttId, "adjust:move", "", distance);
         delay(1000);
     }
 
