@@ -27,6 +27,8 @@ static void networkWatchdog(void *parameter)
             deskStop();
             Serial.println("Network main timeout. Rebooting...");
             ESP.restart();
+            vTaskDelete(NULL);
+            break;
         }
     }
 }
