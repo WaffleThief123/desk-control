@@ -1,6 +1,6 @@
 #pragma once
 
-#define RTOS_STACK_SIZE 2048
+#define RTOS_STACK_SIZE 4096
 #define ARDUINO_CORE 1
 #define IO_CORE 0
 

@@ -33,6 +33,15 @@ static void networkWatchdog(void *parameter)
     }
 }
 
+static void arduinoOTATask(void *parameter)
+{
+    while (1)
+    {
+        ArduinoOTA.handle();
+        delay(100);
+    }
+}
+
 void setup()
 {
     deskSetup();
@@ -57,7 +66,8 @@ void setup()
 
     mqttSetup();
 
-    CREATE_TASK_IO(networkWatchdog, "networkWatchdog", 1, NULL);
+    CREATE_TASK_IO(networkWatchdog, "networkWatchdog", 2, NULL);
+    CREATE_TASK_IO(arduinoOTATask, "arduinoOTA", 1, NULL);
 
     Serial.println("Boot complete");
 }
