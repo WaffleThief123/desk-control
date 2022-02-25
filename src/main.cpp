@@ -7,6 +7,29 @@
 #include "buttons.h"
 #include "serial.h"
 #include "mqtt.h"
+#include "util.h"
+
+static void networkWatchdog(void *parameter)
+{
+    while (1)
+    {
+        delay(1000);
+
+        static unsigned long lastOkayTime = millis();
+        if (WiFi.isConnected() && mqttIsConnected())
+        {
+            lastOkayTime = millis();
+            continue;
+        }
+
+        if (millis() - lastOkayTime > WIFI_MQTT_TIMEOUT)
+        {
+            deskStop();
+            Serial.println("Network main timeout. Rebooting...");
+            ESP.restart();
+        }
+    }
+}
 
 void setup()
 {
@@ -31,6 +54,8 @@ void setup()
     rangingSetup();
 
     mqttSetup();
+
+    CREATE_TASK_IO(networkWatchdog, "networkWatchdog", 1, NULL);
 
     Serial.println("Boot complete");
 }

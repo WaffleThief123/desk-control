@@ -44,6 +44,11 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
     }
 }
 
+bool mqttIsConnected()
+{
+    return mqttClient.connected();
+}
+
 bool mqttEnsureConnected()
 {
     if (mqttClient.connected())
