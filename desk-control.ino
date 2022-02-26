@@ -28,11 +28,13 @@ static void networkWatchdog(void *parameter)
 
         if (millis() - lastOkayTime > WIFI_MQTT_TIMEOUT)
         {
-            deskStop();
-            Serial.println("Network main timeout. Rebooting...");
-            ESP.restart();
-            vTaskDelete(NULL);
-            break;
+            Serial.println("Network main timeout!");
+
+            if (safeRestart())
+            {
+                vTaskDelete(NULL);
+                break;
+            }
         }
     }
 }

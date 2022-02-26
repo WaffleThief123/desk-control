@@ -20,6 +20,13 @@ static void serialHandleCommand()
     {
         mqttSendJSON(NULL, "range", "OK");
     }
+    else if (serialBuffer.equals("restart"))
+    {
+        if (!safeRestart())
+        {
+            Serial.print("NOT ALLOWED");
+        }
+    }
     else if (serialBuffer.startsWith("adjust "))
     {
         deskAdjustHeight(serialBuffer.substring(7).toInt(), NULL);

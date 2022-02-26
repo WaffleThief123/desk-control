@@ -45,6 +45,13 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
     {
         mqttSendJSON(id, "range", "OK");
     }
+    else if (strcmp(cmd, "restart") == 0)
+    {
+        if (!safeRestart())
+        {
+            mqttSendJSON(id, "status", "RESTART NOT ALLOWED");
+        }
+    }
     else
     {
         mqttSendJSON(id, "error", "UNKNOWN COMMAND");
