@@ -122,7 +122,7 @@ void mqttSendJSON(const char *mqttId, const char *type, const char *data, int16_
     {
         range = rangingWaitAndGetDistance();
     }
-    const int8_t moving = deskIsMoving();
+    const int8_t movingDirection = deskGetMovingDirection();
     const int16_t target = deskGetTarget();
 
     Serial.print("<");
@@ -134,7 +134,7 @@ void mqttSendJSON(const char *mqttId, const char *type, const char *data, int16_
     Serial.print(" => ");
     Serial.print(target);
     Serial.print(" @ ");
-    Serial.print(moving);
+    Serial.print(movingDirection);
     Serial.println("]");
 
     char buf[256];
@@ -147,7 +147,7 @@ void mqttSendJSON(const char *mqttId, const char *type, const char *data, int16_
     doc["type"] = type;
     doc["data"] = data;
     doc["range"] = range;
-    doc["moving"] = moving;
+    doc["direction"] = movingDirection;
     doc["target"] = target;
     int len = serializeJson(doc, buf);
 

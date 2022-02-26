@@ -15,14 +15,15 @@ static int16_t speedLastDistance;
 static unsigned long speedLastTime;
 static unsigned long rangingLastTime;
 static int16_t target;
-static int8_t deskMoving;
+static int8_t deskMovingDirection;
 static char mqttId[128];
 static TaskHandle_t moveTaskHandle;
 static TaskHandle_t moveStatusTaskHandle;
+static double deskSpeed;
 
 static void deskStopInternal()
 {
-    deskMoving = 0;
+    deskMovingDirection = 0;
     digitalWrite(PIN_RELAY_UP, LOW);
     digitalWrite(PIN_RELAY_DOWN, LOW);
 }
@@ -58,7 +59,7 @@ void deskMoveTask(void *parameter)
     {
         delay(10);
 
-        if (!deskMoving)
+        if (!deskMovingDirection)
         {
             stopReason = "STOPPED";
             break;
@@ -86,18 +87,40 @@ void deskMoveTask(void *parameter)
         const int16_t heightDiff = abs(target - distance);
         const int8_t shouldMoveDirection = (target > distance) ? 1 : -1;
 
+        if (heightDiff <= DESK_HEIGHT_TOLERANCE)
+        {
+            stopReason = "DONE";
+            break;
+        }
+
+        if (shouldMoveDirection != deskMovingDirection)
+        {
+            stopReason = "OVERSHOOT";
+            break;
+        }
+
         if (time - speedLastTime >= DESK_CALCULATE_SPEED_TIME)
         {
-            const double speed = abs((double)(distance - speedLastDistance) / (double)(time - speedLastTime));
+            const double speed = (double)(distance - speedLastDistance) / (double)(time - speedLastTime);
             speedLastDistance = distance;
             speedLastTime = time;
+            deskSpeed = speed;
 
-            if (speed < DESK_SPEED_MIN)
+            const int8_t speedDirection = (speed > 0) ? 1 : -1;
+
+            if (abs(speed) < DESK_SPEED_MIN || speedDirection != deskMovingDirection)
             {
                 failedSpeedTries++;
                 if (failedSpeedTries >= DESK_SPEED_TRIES)
                 {
-                    stopReason = "SPEED TO LOW";
+                    if (speedDirection != deskMovingDirection)
+                    {
+                        stopReason = "MOVING BACKWARDS";
+                    }
+                    else
+                    {
+                        stopReason = "SPEED TOO LOW";
+                    }
                     break;
                 }
             }
@@ -105,18 +128,6 @@ void deskMoveTask(void *parameter)
             {
                 failedSpeedTries = 0;
             }
-        }
-
-        if (heightDiff <= DESK_HEIGHT_TOLERANCE)
-        {
-            stopReason = "DONE";
-            break;
-        }
-
-        if (shouldMoveDirection != deskMoving)
-        {
-            stopReason = "OVERSHOOT";
-            break;
         }
     }
 
@@ -134,10 +145,10 @@ void deskMoveStatusTask(void* parameter)
 {
     delay(1000);
 
-    while (deskMoving)
+    while (deskMovingDirection)
     {
         const int16_t distance = rangingWaitAndGetDistance();
-        mqttSendJSON(mqttId, "adjust:move", "", distance);
+        mqttSendJSON(mqttId, "adjust:move", String(deskSpeed).c_str(), distance);
         delay(1000);
     }
 
@@ -170,7 +181,7 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
 
     timeout = abs(target - startDistance) * DESK_ADJUST_TIMEOUT_PER_MM;
 
-    deskMoving = (target > startDistance) ? 1 : -1;
+    deskMovingDirection = (target > startDistance) ? 1 : -1;
 
     mqttSendJSON(mqttId, "adjust:start", "");
 
@@ -180,7 +191,7 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
         return;
     }
 
-    if (deskMoving > 0)
+    if (deskMovingDirection > 0)
     {
         digitalWrite(PIN_RELAY_DOWN, LOW);
         digitalWrite(PIN_RELAY_UP, HIGH);
@@ -200,9 +211,9 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
     CREATE_TASK_IO(deskMoveStatusTask, "deskMoveStatus", 1, &moveStatusTaskHandle);
 }
 
-int8_t deskIsMoving()
+int8_t deskGetMovingDirection()
 {
-    return deskMoving;
+    return deskMovingDirection;
 }
 
 int16_t deskGetTarget()
