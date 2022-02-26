@@ -113,7 +113,7 @@ void deskMoveTask(void *parameter)
                 failedSpeedTries++;
                 if (failedSpeedTries >= DESK_SPEED_TRIES)
                 {
-                    if (speedDirection != deskMovingDirection)
+                    if (speedDirection != deskMovingDirection && abs(speed) >= DESK_SPEED_MIN)
                     {
                         stopReason = "MOVING BACKWARDS";
                     }

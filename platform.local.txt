@@ -1,0 +1,7 @@
+compiler.c.extra_flags=-DUSE_ESP_IDF_GPIO
+compiler.c.elf.extra_flags=-DUSE_ESP_IDF_GPIO
+compiler.S.extra_flags=
+compiler.cpp.extra_flags=-DUSE_ESP_IDF_GPIO
+compiler.ar.extra_flags=
+compiler.objcopy.eep.extra_flags=
+compiler.elf2hex.extra_flags=

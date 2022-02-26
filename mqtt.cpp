@@ -1,14 +1,14 @@
+#include <Arduino.h>
+#include <PubSubClient.h>
+#include <WiFi.h>
+#include <ArduinoJson.h>
+
 #include "mqtt.h"
 
 #include "config.h"
 #include "desk.h"
 #include "ranging.h"
 #include "util.h"
-
-#include <Arduino.h>
-#include <PubSubClient.h>
-#include <WiFi.h>
-#include <ArduinoJson.h>
 
 WiFiClient espMqttClient;
 PubSubClient mqttClient(espMqttClient);
