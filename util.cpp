@@ -8,6 +8,7 @@ bool doRestart(bool force)
     Serial.println("Restarting...");
     if (deskGetMovingDirection() && !force)
     {
+        Serial.println("Can't restart, desk moving and not forced!");
         return false;
     }
     deskStop();
