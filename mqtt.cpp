@@ -47,7 +47,8 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
     }
     else if (strcmp(cmd, "restart") == 0)
     {
-        if (!safeRestart())
+        bool force = doc["force"].as<bool>();
+        if (!doRestart(force))
         {
             mqttSendJSON(id, "status", "RESTART NOT ALLOWED");
         }

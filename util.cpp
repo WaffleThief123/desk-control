@@ -3,10 +3,10 @@
 #include "util.h"
 #include "desk.h"
 
-bool safeRestart()
+bool doRestart(bool force)
 {
     Serial.println("Restarting...");
-    if (deskGetMovingDirection())
+    if (deskGetMovingDirection() && !force)
     {
         return false;
     }

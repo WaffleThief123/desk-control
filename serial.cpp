@@ -22,7 +22,14 @@ static void serialHandleCommand()
     }
     else if (serialBuffer.equals("restart"))
     {
-        if (!safeRestart())
+        if (!doRestart(false))
+        {
+            Serial.print("NOT ALLOWED");
+        }
+    }
+    else if (serialBuffer.equals("restart force"))
+    {
+        if (!doRestart(true))
         {
             Serial.print("NOT ALLOWED");
         }

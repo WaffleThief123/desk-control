@@ -30,7 +30,7 @@ static void networkWatchdog(void *parameter)
         {
             Serial.println("Network main timeout!");
 
-            if (safeRestart())
+            if (doRestart(false))
             {
                 vTaskDelete(NULL);
                 break;
