@@ -4,6 +4,7 @@
 #include "ranging.h"
 #include "config.h"
 #include "util.h"
+#include "mqtt.h"
 
 #define RANGING_UNUSED_TIMEOUT 2000
 
@@ -30,8 +31,8 @@ static void rangingSensorInit()
 {
     if (!vl53.begin(0x29, &Wire))
     {
-        Serial.print("VL53L1X init failed: ");
-        Serial.println(vl53.vl_status);
+        mqttSetLastError("VL53L1X_Begin: " + String(vl53.vl_status));
+        return;
     }
 
     rangingStop();
@@ -80,17 +81,19 @@ void rangingTask(void *parameter)
         }
         else
         {
-            uint8_t tmp = 0;
-            vl53.VL53L1X_GetRangeStatus(&tmp);
-            if (tmp)
+            uint8_t rangeStatus = 0;
+            vl53.VL53L1X_GetRangeStatus(&rangeStatus);
+            if (rangeStatus)
             {
-                Serial.print("VL53L1X error status: ");
-                Serial.println(tmp);
+                mqttSetLastError("VL53L1X_GetRangeStatus: " + String(rangeStatus));
 
-                rangingStop();
-                vl53.end();
-                rangingSensorInit();
-                rangingStart();
+                if (rangeStatus == 0xFF)
+                {
+                    rangingStop();
+                    vl53.end();
+                    rangingSensorInit();
+                    rangingStart();
+                }
             }
         }
     }

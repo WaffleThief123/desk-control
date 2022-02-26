@@ -70,6 +70,8 @@ void setup()
     CREATE_TASK_IO(arduinoOTATask, "arduinoOTA", 1, NULL);
 
     Serial.println("Boot complete");
+
+    mqttSendJSON(NULL, "status", "BOOT OK", -1);
 }
 
 void loop()

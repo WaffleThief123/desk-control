@@ -13,6 +13,13 @@
 WiFiClient espMqttClient;
 PubSubClient mqttClient(espMqttClient);
 
+String lastErrorCode = "";
+void mqttSetLastError(String errorCode)
+{
+    lastErrorCode = errorCode;
+    Serial.println("ERROR: " + errorCode);
+}
+
 void mqttCallback(char *topic, byte *payload, unsigned int len)
 {
     char str[len + 1];
@@ -85,6 +92,10 @@ static void mqttLoopTask(void *parameter)
         if (mqttEnsureConnected())
         {
             mqttClient.loop();
+            if (!lastErrorCode.isEmpty())
+            {
+                mqttSendJSON(NULL, "error", lastErrorCode.c_str(), -1);
+            }
         }
         delay(10);
     }
