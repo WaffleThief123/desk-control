@@ -53,18 +53,10 @@ void deskSetup()
 
 void deskMoveTask(void *parameter)
 {
-    String stopReason = "UNKNOWN";
+    String stopReason = "STOPPED";
 
-    while (1)
+    while (deskMovingDirection)
     {
-        delay(10);
-
-        if (!deskMovingDirection)
-        {
-            stopReason = "STOPPED";
-            break;
-        }
-
         const unsigned long time = millis();
         if (time - startTime > timeout)
         {
@@ -129,6 +121,8 @@ void deskMoveTask(void *parameter)
                 failedSpeedTries = 0;
             }
         }
+
+        delay(10);
     }
 
     deskStopInternal();
@@ -181,15 +175,15 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
 
     timeout = abs(target - startDistance) * DESK_ADJUST_TIMEOUT_PER_MM;
 
-    mqttSendJSON(mqttId, "adjust:start", "");
-
     if (abs(target - startDistance) < DESK_HEIGHT_TOLERANCE)
     {
-        mqttSendJSON(mqttId, "adjust:stop", "NO CHANGE");
+        mqttSendJSON(mqttId, "adjust:stop", "NO CHANGE", startDistance);
         return;
     }
 
     deskMovingDirection = (target > startDistance) ? 1 : -1;
+    mqttSendJSON(mqttId, "adjust:start", "", startDistance);
+
     if (deskMovingDirection > 0)
     {
         digitalWrite(PIN_RELAY_DOWN, LOW);
