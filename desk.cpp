@@ -181,8 +181,6 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
 
     timeout = abs(target - startDistance) * DESK_ADJUST_TIMEOUT_PER_MM;
 
-    deskMovingDirection = (target > startDistance) ? 1 : -1;
-
     mqttSendJSON(mqttId, "adjust:start", "");
 
     if (abs(target - startDistance) < DESK_HEIGHT_TOLERANCE)
@@ -191,6 +189,7 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
         return;
     }
 
+    deskMovingDirection = (target > startDistance) ? 1 : -1;
     if (deskMovingDirection > 0)
     {
         digitalWrite(PIN_RELAY_DOWN, LOW);
