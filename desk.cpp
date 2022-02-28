@@ -93,7 +93,7 @@ void deskMoveTask(void *parameter)
 
         if (time - speedLastTime >= DESK_CALCULATE_SPEED_TIME)
         {
-            const double speed = (double)(distance - speedLastDistance) / (double)(time - speedLastTime);
+            const double speed = ((double)(distance - speedLastDistance) / (double)(time - speedLastTime)) * 1000.0;
             speedLastDistance = distance;
             speedLastTime = time;
             deskSpeed = speed;
@@ -137,13 +137,13 @@ void deskMoveTask(void *parameter)
 
 void deskMoveStatusTask(void* parameter)
 {
-    delay(1000);
+    delay(100);
 
     while (deskMovingDirection)
     {
         const int16_t distance = rangingWaitAndGetDistance();
         mqttSendJSON(mqttId, "adjust:move", String(deskSpeed).c_str(), distance);
-        delay(1000);
+        delay(100);
     }
 
     moveStatusTaskHandle = NULL;
