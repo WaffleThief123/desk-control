@@ -133,18 +133,6 @@ void mqttSendJSON(const char *mqttId, const char *type, const char *data, int16_
     const int8_t movingDirection = deskGetMovingDirection();
     const int16_t target = deskGetTarget();
 
-    Serial.print("<");
-    Serial.print(type);
-    Serial.print("> ");
-    Serial.print(data);
-    Serial.print(" [");
-    Serial.print(range);
-    Serial.print(" => ");
-    Serial.print(target);
-    Serial.print(" @ ");
-    Serial.print(movingDirection);
-    Serial.println("]");
-
     char buf[256];
 
     StaticJsonDocument<256> doc;
