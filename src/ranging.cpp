@@ -87,13 +87,10 @@ void rangingTask(void *parameter)
             {
                 mqttSetLastError("VL53L1X_GetRangeStatus: " + String(rangeStatus));
 
-                if (rangeStatus == 0xFF)
-                {
-                    rangingStop();
-                    vl53.end();
-                    rangingSensorInit();
-                    rangingStart();
-                }
+                rangingStop();
+                vl53.end();
+                rangingSensorInit();
+                rangingStart();
             }
         }
     }

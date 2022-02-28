@@ -9,10 +9,6 @@
 #include "mqtt.h"
 #include "util.h"
 
-#ifndef USE_ESP_IDF_GPIO
-#error "Need USE_ESP_IDF_GPIO"
-#endif
-
 static void networkWatchdog(void *parameter)
 {
     while (1)
