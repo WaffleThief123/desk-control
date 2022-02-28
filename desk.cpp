@@ -141,8 +141,7 @@ void deskMoveStatusTask(void* parameter)
 
     while (deskMovingDirection)
     {
-        const int16_t distance = rangingWaitAndGetDistance();
-        mqttSendJSON(mqttId, "adjust:move", String(deskSpeed).c_str(), distance);
+        mqttSendJSON(mqttId, "adjust:move", String(deskSpeed).c_str());
         delay(100);
     }
 
@@ -172,6 +171,11 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
     startTime = millis();
 
     startDistance = rangingWaitAndGetDistance();
+    if (startDistance < 0)
+    {
+        mqttSendJSON(mqttId, "adjust:stop", "INITIAL RANGING TIMEOUT");
+        return;
+    }
 
     timeout = abs(target - startDistance) * DESK_ADJUST_TIMEOUT_PER_MM;
 

@@ -18,7 +18,7 @@ static void serialHandleCommand()
 
     if (serialBuffer.equals("range"))
     {
-        mqttSendJSON(NULL, "range", "OK");
+        Serial.print(rangingWaitAndGetDistance());
     }
     else if (serialBuffer.equals("restart"))
     {

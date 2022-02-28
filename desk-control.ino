@@ -77,7 +77,7 @@ void setup()
 
     Serial.println("Boot complete");
 
-    mqttSendJSON(NULL, "status", "BOOT OK", -1);
+    mqttSendJSON(NULL, "status", "BOOT OK");
 }
 
 void loop()
