@@ -64,8 +64,9 @@ void deskMoveTask(void *parameter)
             break;
         }
 
-        const int16_t distance = rangingGetDistance();
-        if (distance < 0)
+        const ranging_result_t rangingResult = rangingGetResult();
+        const int16_t distance = rangingResult.value;
+        if (!rangingResult.valid)
         {
             if (time - rangingLastTime > DESK_RANGING_TIMEOUT)
             {
@@ -170,12 +171,14 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
     target = _target;
     startTime = millis();
 
-    startDistance = rangingWaitAndGetDistance();
-    if (startDistance < 0)
+    const ranging_result_t rangingResult = rangingWaitForResult();
+    if (!rangingResult.valid)
     {
         mqttSendJSON(mqttId, "adjust:stop", "INITIAL RANGING TIMEOUT");
         return;
     }
+
+    startDistance = rangingResult.value;
 
     timeout = abs(target - startDistance) * DESK_ADJUST_TIMEOUT_PER_MM;
 

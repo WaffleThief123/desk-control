@@ -10,10 +10,10 @@
 
 Adafruit_VL53L1X vl53 = Adafruit_VL53L1X();
 
-static int16_t lastValue = -1;
-static unsigned long lastValueTime = 0;
+static ranging_result_t lastValue;
 static unsigned long lastQueryTime = 0;
 static TaskHandle_t rangingTaskHandle;
+static bool isRanging = false;
 
 static void rangingStart()
 {
@@ -55,6 +55,7 @@ static void rangingSensorInit()
 
 void rangingSetup()
 {
+    lastValue.valid = false;
     Wire.setPins(PIN_SDA, PIN_SCL);
     Wire.begin();
     rangingSensorInit();
@@ -62,6 +63,7 @@ void rangingSetup()
 
 void rangingTask(void *parameter)
 {
+    isRanging = true;
     rangingStart();
 
     while (1)
@@ -75,8 +77,9 @@ void rangingTask(void *parameter)
 
         if (vl53.dataReady())
         {
-            lastValue = vl53.distance();
-            lastValueTime = millis();
+            lastValue.valid = true;
+            lastValue.value = vl53.distance();
+            lastValue.time = millis();
             vl53.clearInterrupt();
         }
         else
@@ -95,6 +98,7 @@ void rangingTask(void *parameter)
         }
     }
 
+    isRanging = false;
     rangingStop();
     rangingTaskHandle = NULL;
     vTaskDelete(NULL);
@@ -104,30 +108,30 @@ static void rangingChecks()
 {
     lastQueryTime = millis();
 
-    if (lastValue >= 0 && millis() - lastValueTime > RANGING_TIMEOUT)
+    if (lastValue.value >= 0 && millis() - lastValue.time > RANGING_TIMEOUT)
     {
-        lastValue = -1;
-        lastValueTime = -1;
+        lastValue.valid = false;
     }
 
     if (!rangingTaskHandle)
     {
+        isRanging = true;
         CREATE_TASK(rangingTask, "ranging", 5, &rangingTaskHandle);
     }
 }
 
-int16_t rangingGetDistance()
+ranging_result_t rangingGetResult()
 {
     rangingChecks();
 
     return lastValue;
 }
 
-int16_t rangingWaitAndGetDistance()
+ranging_result_t rangingWaitForResult()
 {
     rangingChecks();
 
-    while (lastValue < 0)
+    while (isRanging && !lastValue.valid)
     {
         delay(1);
     }

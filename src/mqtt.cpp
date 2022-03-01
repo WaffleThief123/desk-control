@@ -128,7 +128,12 @@ void mqttSendJSON(const char *mqttId, const char *type, const char *data, int16_
 {
     if (range == -999)
     {
-        range = rangingWaitAndGetDistance();
+        const ranging_result_t rangingResult = rangingWaitForResult();
+        if (rangingResult.valid) {
+            range = rangingResult.value;
+        } else {
+            range = -1;
+        }
     }
     const int8_t movingDirection = deskGetMovingDirection();
     const int16_t target = deskGetTarget();

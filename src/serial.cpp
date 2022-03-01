@@ -18,7 +18,17 @@ static void serialHandleCommand()
 
     if (serialBuffer.equals("range"))
     {
-        Serial.print(rangingWaitAndGetDistance());
+        const ranging_result_t rangingResult = rangingWaitForResult();
+        if (rangingResult.valid)
+        {
+            Serial.print(rangingResult.value);
+            Serial.print(" @ ");
+            Serial.print(rangingResult.time);
+        }
+        else
+        {
+            Serial.print("ERROR");
+        }
     }
     else if (serialBuffer.equals("restart"))
     {
