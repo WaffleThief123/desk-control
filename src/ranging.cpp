@@ -60,7 +60,6 @@ static bool shouldRange()
 
 static void rangingTaskInner()
 {
-    isRanging = true;
     rangingStart();
 
     while (shouldRange())
@@ -90,7 +89,6 @@ static void rangingTaskInner()
         delay(10);
     }
 
-    isRanging = false;
     rangingStop();
 }
 
@@ -98,11 +96,16 @@ static void rangingTask(void *parameter)
 {
     while (1)
     {
-        vTaskSuspend(NULL);
-        while (shouldRange())
+        if (shouldRange())
         {
+            isRanging = true;
             rangingTaskInner();
         }
+        else
+        {
+            isRanging = false;
+        }
+        delay(10);
     }
 }
 
@@ -119,13 +122,12 @@ void rangingSetup()
 static void rangingChecks()
 {
     lastQueryTime = millis();
+    isRanging = true;
 
     if (lastValue.value >= 0 && millis() - lastValue.time > RANGING_TIMEOUT)
     {
         lastValue.valid = false;
     }
-
-    vTaskResume(rangingTaskHandle);
 }
 
 ranging_result_t rangingGetResult()

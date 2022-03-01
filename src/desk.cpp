@@ -116,12 +116,11 @@ static void deskMoveTask(void* parameter)
 {
     while (1)
     {
-        vTaskSuspend(NULL);
-
-        while (deskMovingDirection)
+        if (deskMovingDirection)
         {
             deskMoveTaskInner();
         }
+        delay(10);
     }
 }
 
@@ -129,14 +128,11 @@ static void deskMoveStatusTask(void* parameter)
 {
     while (1)
     {
-        vTaskSuspend(NULL);
-        delay(100);
-
-        while (deskMovingDirection)
+        if (deskMovingDirection)
         {
             mqttSendJSON(mqttId, "adjust:move", String(deskSpeed).c_str());
-            delay(100);
         }
+        delay(100);
     }
 }
 
@@ -206,9 +202,6 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
     speedLastDistance = startDistance;
     speedLastTime = startTime;
     rangingLastTime = startTime;
-
-    vTaskResume(moveStatusTaskHandle);
-    vTaskResume(moveTaskHandle);
 }
 
 int8_t deskGetMovingDirection()
