@@ -71,6 +71,7 @@ bool mqttEnsureConnected()
         return true;
     }
 
+
     if (!WiFi.isConnected())
     {
         return false;
@@ -78,6 +79,7 @@ bool mqttEnsureConnected()
 
     mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
     mqttClient.setCallback(mqttCallback);
+
     String clientId = WIFI_HOSTNAME "-" + String(WiFi.macAddress());
 
     if (!mqttClient.connect(clientId.c_str(), MQTT_USERNAME, MQTT_PASSWORD))
@@ -103,6 +105,7 @@ static void mqttLoopTask(void *parameter)
             if (!lastErrorCode.isEmpty())
             {
                 mqttSendJSON(NULL, "error", lastErrorCode.c_str(), -1);
+                lastErrorCode = "";
             }
         }
         delay(10);

@@ -21,37 +21,14 @@ static TaskHandle_t moveTaskHandle;
 static TaskHandle_t moveStatusTaskHandle;
 static double deskSpeed;
 
-static void deskStopInternal()
+void deskStop()
 {
     deskMovingDirection = 0;
     digitalWrite(PIN_RELAY_UP, LOW);
     digitalWrite(PIN_RELAY_DOWN, LOW);
 }
 
-void deskStop()
-{
-    deskStopInternal();
-    if (moveStatusTaskHandle)
-    {
-        vTaskDelete(moveStatusTaskHandle);
-        moveStatusTaskHandle = NULL;
-    }
-    if (moveTaskHandle)
-    {
-        vTaskDelete(moveTaskHandle);
-        moveTaskHandle = NULL;
-        mqttSendJSON(mqttId, "adjust:stop", "STOPPED");
-    }
-}
-
-void deskSetup()
-{
-    pinMode(PIN_RELAY_UP, OUTPUT);
-    pinMode(PIN_RELAY_DOWN, OUTPUT);
-    deskStop();
-}
-
-void deskMoveTask(void *parameter)
+static void deskMoveTaskInner()
 {
     String stopReason = "STOPPED";
 
@@ -128,28 +105,49 @@ void deskMoveTask(void *parameter)
         delay(10);
     }
 
-    deskStopInternal();
-    moveTaskHandle = NULL;
+    deskStop();
 
     mqttSendJSON(mqttId, "adjust:stop", stopReason.c_str());
 
     mqttId[0] = 0;
-
-    vTaskDelete(NULL);
 }
 
-void deskMoveStatusTask(void* parameter)
+static void deskMoveTask(void* parameter)
 {
-    delay(100);
-
-    while (deskMovingDirection)
+    while (1)
     {
-        mqttSendJSON(mqttId, "adjust:move", String(deskSpeed).c_str());
-        delay(100);
-    }
+        vTaskSuspend(NULL);
 
-    moveStatusTaskHandle = NULL;
-    vTaskDelete(NULL);
+        while (deskMovingDirection)
+        {
+            deskMoveTaskInner();
+        }
+    }
+}
+
+static void deskMoveStatusTask(void* parameter)
+{
+    while (1)
+    {
+        vTaskSuspend(NULL);
+        delay(100);
+
+        while (deskMovingDirection)
+        {
+            mqttSendJSON(mqttId, "adjust:move", String(deskSpeed).c_str());
+            delay(100);
+        }
+    }
+}
+
+void deskSetup()
+{
+    pinMode(PIN_RELAY_UP, OUTPUT);
+    pinMode(PIN_RELAY_DOWN, OUTPUT);
+    deskStop();
+
+    CREATE_TASK(deskMoveTask, "deskMove", 10, &moveTaskHandle);
+    CREATE_TASK_IO(deskMoveStatusTask, "deskMoveStatus", 1, &moveStatusTaskHandle);
 }
 
 void deskAdjustHeight(int16_t _target, const char *_mqttId)
@@ -209,8 +207,8 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
     speedLastTime = startTime;
     rangingLastTime = startTime;
 
-    CREATE_TASK(deskMoveTask, "deskMove", 10, &moveTaskHandle);
-    CREATE_TASK_IO(deskMoveStatusTask, "deskMoveStatus", 1, &moveStatusTaskHandle);
+    vTaskResume(moveStatusTaskHandle);
+    vTaskResume(moveTaskHandle);
 }
 
 int8_t deskGetMovingDirection()

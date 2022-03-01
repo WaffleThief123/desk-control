@@ -53,28 +53,18 @@ static void rangingSensorInit()
 #endif
 }
 
-void rangingSetup()
+static bool shouldRange()
 {
-    lastValue.valid = false;
-    Wire.setPins(PIN_SDA, PIN_SCL);
-    Wire.begin();
-    rangingSensorInit();
+    return millis() - lastQueryTime <= RANGING_UNUSED_TIMEOUT;
 }
 
-void rangingTask(void *parameter)
+static void rangingTaskInner()
 {
     isRanging = true;
     rangingStart();
 
-    while (1)
+    while (shouldRange())
     {
-        delay(10);
-
-        if (millis() - lastQueryTime > RANGING_UNUSED_TIMEOUT)
-        {
-            break;
-        }
-
         if (vl53.dataReady())
         {
             lastValue.valid = true;
@@ -96,12 +86,34 @@ void rangingTask(void *parameter)
                 rangingStart();
             }
         }
+
+        delay(10);
     }
 
     isRanging = false;
     rangingStop();
-    rangingTaskHandle = NULL;
-    vTaskDelete(NULL);
+}
+
+static void rangingTask(void *parameter)
+{
+    while (1)
+    {
+        vTaskSuspend(NULL);
+        while (shouldRange())
+        {
+            rangingTaskInner();
+        }
+    }
+}
+
+void rangingSetup()
+{
+    lastValue.valid = false;
+    Wire.setPins(PIN_SDA, PIN_SCL);
+    Wire.begin();
+    rangingSensorInit();
+
+    CREATE_TASK(rangingTask, "ranging", 5, &rangingTaskHandle);
 }
 
 static void rangingChecks()
@@ -113,11 +125,7 @@ static void rangingChecks()
         lastValue.valid = false;
     }
 
-    if (!rangingTaskHandle)
-    {
-        isRanging = true;
-        CREATE_TASK(rangingTask, "ranging", 5, &rangingTaskHandle);
-    }
+    vTaskResume(rangingTaskHandle);
 }
 
 ranging_result_t rangingGetResult()
