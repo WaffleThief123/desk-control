@@ -57,8 +57,7 @@ void deskMoveTask(void *parameter)
 
     while (deskMovingDirection)
     {
-        const unsigned long time = millis();
-        if (time - startTime > timeout)
+        if (millis() - startTime > timeout)
         {
             stopReason = "MAIN TIMEOUT";
             break;
@@ -68,13 +67,16 @@ void deskMoveTask(void *parameter)
         const int16_t distance = rangingResult.value;
         if (!rangingResult.valid)
         {
-            if (time - rangingLastTime > DESK_RANGING_TIMEOUT)
+            if (millis() - rangingLastTime > DESK_RANGING_TIMEOUT)
             {
                 stopReason = "RANGING TIMEOUT";
                 break;
             }
             continue;
         }
+
+        const unsigned long time = rangingResult.time;
+
         rangingLastTime = time;
 
         const int16_t heightDiff = abs(target - distance);
