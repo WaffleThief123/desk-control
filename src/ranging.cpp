@@ -130,14 +130,14 @@ static void rangingChecks()
     }
 }
 
-ranging_result_t rangingGetResult()
+const ranging_result_t rangingGetResult()
 {
     rangingChecks();
 
     return lastValue;
 }
 
-ranging_result_t rangingWaitForResult()
+const ranging_result_t rangingWaitForResult()
 {
     rangingChecks();
 

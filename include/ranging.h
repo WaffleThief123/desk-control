@@ -9,5 +9,5 @@ typedef struct ranging_result_t {
 } ranging_result_t;
 
 void rangingSetup();
-ranging_result_t rangingGetResult();
-ranging_result_t rangingWaitForResult();
+const ranging_result_t rangingGetResult();
+const ranging_result_t rangingWaitForResult();
