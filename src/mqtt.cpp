@@ -125,7 +125,7 @@ static void mqttLoopTask(void *parameter)
 void mqttSetup()
 {
     mqttEnsureConnected();
-    CREATE_TASK_IO(mqttLoopTask, "mqttLoop", 1, NULL);
+    CREATE_TASK_IO(mqttLoopTask, "mqttLoop", 10, NULL);
 }
 
 void mqttSend(const char *data)

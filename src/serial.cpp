@@ -89,5 +89,5 @@ void serialSetup()
 {
     serialBuffer.reserve(128);
     SERIAL_PORT.begin(115200);
-    CREATE_TASK_IO(serialTask, "serial", 2, NULL);
+    CREATE_TASK_IO(serialTask, "serial", 5, NULL);
 }

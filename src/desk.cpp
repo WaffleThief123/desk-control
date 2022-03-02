@@ -204,8 +204,8 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
     speedLastTime = startTime;
     rangingLastTime = startTime;
 
-    CREATE_TASK(deskMoveTask, "deskMove", 10, &moveTaskHandle);
-    CREATE_TASK_IO(deskMoveStatusTask, "deskMoveStatus", 1, &moveStatusTaskHandle);
+    CREATE_TASK(deskMoveTask, "deskMove", 100, &moveTaskHandle);
+    CREATE_TASK_IO(deskMoveStatusTask, "deskMoveStatus", 20, &moveStatusTaskHandle);
 }
 
 int8_t deskGetMovingDirection()

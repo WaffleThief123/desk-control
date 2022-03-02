@@ -113,7 +113,7 @@ void rangingSetup()
 {
     lastValue.valid = false;
     INVALID_VALUE.valid = false;
-    CREATE_TASK(rangingTask, "ranging", 5, &rangingTaskHandle);
+    CREATE_TASK(rangingTask, "ranging", 50, &rangingTaskHandle);
 }
 
 static void rangingChecks()
