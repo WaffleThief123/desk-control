@@ -13,13 +13,13 @@ static unsigned long startTime;
 static int failedSpeedTries;
 static int16_t speedLastDistance;
 static unsigned long speedLastTime;
-static unsigned long rangingLastTime;
 static int16_t target;
 static int8_t deskMovingDirection;
 static char mqttId[128];
 static TaskHandle_t moveTaskHandle;
 static TaskHandle_t moveStatusTaskHandle;
 static double deskSpeed;
+static unsigned long rangingLastTime;
 
 static void deskStopInternal()
 {
@@ -68,21 +68,16 @@ static void deskMoveTask(void *parameter)
             break;
         }
 
-        const ranging_result_t rangingResult = rangingGetResult();
-        const int16_t distance = rangingResult.value;
+        const ranging_result_t rangingResult = rangingWaitForNewResult(rangingLastTime, DESK_RANGING_TIMEOUT);
         if (!rangingResult.valid)
         {
-            if (millis() - rangingLastTime > DESK_RANGING_TIMEOUT)
-            {
-                stopReason = "RANGING TIMEOUT";
-                break;
-            }
-            continue;
+            stopReason = "RANGING TIMEOUT";
+            break;
         }
+        const int16_t distance = rangingResult.value;
+        rangingLastTime = rangingResult.time;
 
         const unsigned long time = rangingResult.time;
-
-        rangingLastTime = time;
 
         const int16_t heightDiff = abs(target - distance);
         const int8_t shouldMoveDirection = (target > distance) ? 1 : -1;
@@ -183,7 +178,7 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
 
     target = _target;
 
-    const ranging_result_t rangingResult = rangingWaitForNewResult();
+    const ranging_result_t rangingResult = rangingWaitForNextResult();
     if (!rangingResult.valid)
     {
         mqttSendJSON(mqttId, "adjust:stop", "INITIAL RANGING TIMEOUT", -1);

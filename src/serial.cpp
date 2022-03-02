@@ -18,7 +18,7 @@ static void serialHandleCommand()
 
     if (serialBuffer.equals("range"))
     {
-        const ranging_result_t rangingResult = rangingWaitForNewResult();
+        const ranging_result_t rangingResult = rangingWaitForNextResult();
         if (rangingResult.valid)
         {
             SERIAL_PORT.print(rangingResult.value);

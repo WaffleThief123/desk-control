@@ -133,17 +133,21 @@ const ranging_result_t rangingGetResult()
     return lastValue;
 }
 
-const ranging_result_t rangingWaitForNewResult()
+const ranging_result_t rangingWaitForNewResult(unsigned long timeout, unsigned long lastTime)
 {
     const unsigned long startTime = millis();
-    const unsigned long startResultTime = lastValue.time;
     rangingChecks();
 
-    while (!lastValue.valid || lastValue.time == startResultTime)
+    if (timeout == 0)
+    {
+        timeout = RANGING_TIMEOUT;
+    }
+
+    while (!lastValue.valid || lastValue.time == lastTime)
     {
         lastQueryTime = millis();
         delay(1);
-        if (millis() - startTime > RANGING_TIMEOUT)
+        if (millis() - startTime > timeout)
         {
             return INVALID_VALUE;
         }
@@ -152,16 +156,26 @@ const ranging_result_t rangingWaitForNewResult()
     return lastValue;
 }
 
-const ranging_result_t rangingWaitForAnyResult()
+const ranging_result_t rangingWaitForNextResult(unsigned long timeout)
+{
+    return rangingWaitForNewResult(timeout, lastValue.time);
+}
+
+const ranging_result_t rangingWaitForAnyResult(unsigned long timeout)
 {
     const unsigned long startTime = millis();
     rangingChecks();
+
+    if (timeout == 0)
+    {
+        timeout = RANGING_TIMEOUT;
+    }
 
     while (!lastValue.valid)
     {
         lastQueryTime = millis();
         delay(1);
-        if (millis() - startTime > RANGING_TIMEOUT)
+        if (millis() - startTime > timeout)
         {
             return INVALID_VALUE;
         }
