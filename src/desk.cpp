@@ -40,6 +40,8 @@ void deskStop()
     {
         vTaskDelete(moveStatusTaskHandle);
         moveStatusTaskHandle = NULL;
+        mqttSendJSON(mqttId, "adjust:stop", "STOPPED");
+        mqttId[0] = 0;
     }
 }
 
