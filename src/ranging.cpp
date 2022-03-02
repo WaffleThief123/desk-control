@@ -126,13 +126,6 @@ static void rangingChecks()
     }
 }
 
-const ranging_result_t rangingGetResult()
-{
-    rangingChecks();
-
-    return lastValue;
-}
-
 const ranging_result_t rangingWaitForNewResult(const unsigned long lastTime, unsigned long timeout)
 {
     const unsigned long startTime = millis();
