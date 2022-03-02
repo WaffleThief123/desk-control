@@ -100,6 +100,8 @@ bool mqttEnsureConnected()
     SERIAL_PORT.println("MQTT connected");
 
     mqttClient.subscribe(MQTT_TOPIC_SUB);
+
+    mqttSendJSON(NULL, "status", "Connected");
     return true;
 }
 
