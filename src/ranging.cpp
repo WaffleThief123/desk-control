@@ -11,9 +11,9 @@
 Adafruit_VL53L1X vl53 = Adafruit_VL53L1X();
 
 static ranging_result_t lastValue;
+static ranging_result_t INVALID_VALUE;
 static unsigned long lastQueryTime = 0;
 static TaskHandle_t rangingTaskHandle;
-static bool isRanging = false;
 
 static void rangingStart()
 {
@@ -98,12 +98,8 @@ static void rangingTask(void *parameter)
     {
         if (shouldRange())
         {
-            isRanging = true;
             rangingTaskInner();
-        }
-        else
-        {
-            isRanging = false;
+            lastValue.valid = false;
         }
         delay(10);
     }
@@ -112,6 +108,7 @@ static void rangingTask(void *parameter)
 void rangingSetup()
 {
     lastValue.valid = false;
+    INVALID_VALUE.valid = false;
     Wire.setPins(PIN_SDA, PIN_SCL);
     Wire.begin();
     rangingSensorInit();
@@ -122,9 +119,8 @@ void rangingSetup()
 static void rangingChecks()
 {
     lastQueryTime = millis();
-    isRanging = true;
 
-    if (lastValue.value >= 0 && millis() - lastValue.time > RANGING_TIMEOUT)
+    if (lastValue.valid && millis() - lastValue.time > RANGING_TIMEOUT)
     {
         lastValue.valid = false;
     }
@@ -139,11 +135,18 @@ const ranging_result_t rangingGetResult()
 
 const ranging_result_t rangingWaitForResult()
 {
+    const unsigned long startTime = millis();
+    const unsigned long startResultTime = lastValue.time;
     rangingChecks();
 
-    while (isRanging && !lastValue.valid)
+    while (!lastValue.valid || lastValue.time == startResultTime)
     {
+        lastQueryTime = millis();
         delay(1);
+        if (millis() - startTime > RANGING_TIMEOUT)
+        {
+            return INVALID_VALUE;   
+        }
     }
 
     return lastValue;

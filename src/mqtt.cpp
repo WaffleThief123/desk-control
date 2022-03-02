@@ -10,10 +10,10 @@
 #include "ranging.h"
 #include "util.h"
 
-WiFiClient espMqttClient;
-PubSubClient mqttClient(espMqttClient);
+static WiFiClient espMqttClient;
+static PubSubClient mqttClient(espMqttClient);
 
-String lastErrorCode = "";
+static String lastErrorCode = "";
 void mqttSetLastError(String errorCode)
 {
     lastErrorCode = errorCode;
@@ -27,7 +27,15 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
     str[len] = 0;
 
     DynamicJsonDocument doc(256);
-    deserializeJson(doc, str);
+    DeserializationError err = deserializeJson(doc, str);
+    if (err != DeserializationError::Ok)
+    {
+        Serial.print("MQTT JSON error: ");
+        Serial.println(err.c_str());
+        Serial.print("On input: ");
+        Serial.println(str);
+        return;
+    }
 
     const char *id = doc["id"].as<const char *>();
 
@@ -70,7 +78,6 @@ bool mqttEnsureConnected()
     {
         return true;
     }
-
 
     if (!WiFi.isConnected())
     {
@@ -132,9 +139,12 @@ void mqttSendJSON(const char *mqttId, const char *type, const char *data, int16_
     if (range == -999)
     {
         const ranging_result_t rangingResult = rangingWaitForResult();
-        if (rangingResult.valid) {
+        if (rangingResult.valid)
+        {
             range = rangingResult.value;
-        } else {
+        }
+        else
+        {
             range = -1;
         }
     }
@@ -156,6 +166,11 @@ void mqttSendJSON(const char *mqttId, const char *type, const char *data, int16_
     int len = serializeJson(doc, buf);
 
     buf[len] = 0;
+
+    if (debugEnabled)
+    {
+        Serial.println(buf);
+    }
 
     mqttSend(buf);
 }

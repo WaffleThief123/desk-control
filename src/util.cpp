@@ -3,6 +3,8 @@
 #include "util.h"
 #include "desk.h"
 
+bool debugEnabled = false;
+
 bool doRestart(bool force)
 {
     Serial.println("Restarting...");

@@ -30,6 +30,11 @@ static void serialHandleCommand()
             Serial.print("ERROR");
         }
     }
+    else if (serialBuffer.equals("debug"))
+    {
+        debugEnabled = !debugEnabled;
+        Serial.print(debugEnabled);
+    }
     else if (serialBuffer.equals("restart"))
     {
         if (!doRestart(false))
