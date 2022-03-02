@@ -79,10 +79,13 @@ static void rangingTaskInner()
             {
                 mqttSetLastError("VL53L1X_GetRangeStatus: " + String(rangeStatus));
 
-                rangingStop();
-                vl53.end();
-                rangingSensorInit();
-                rangingStart();
+                if (rangeStatus != 2 && rangeStatus != 4)
+                {
+                    rangingStop();
+                    vl53.end();
+                    rangingSensorInit();
+                    rangingStart();
+                }
             }
         }
 
@@ -94,6 +97,10 @@ static void rangingTaskInner()
 
 static void rangingTask(void *parameter)
 {
+    Wire.setPins(PIN_SDA, PIN_SCL);
+    Wire.begin();
+    rangingSensorInit();
+
     while (1)
     {
         if (shouldRange())
@@ -109,10 +116,6 @@ void rangingSetup()
 {
     lastValue.valid = false;
     INVALID_VALUE.valid = false;
-    Wire.setPins(PIN_SDA, PIN_SCL);
-    Wire.begin();
-    rangingSensorInit();
-
     CREATE_TASK(rangingTask, "ranging", 5, &rangingTaskHandle);
 }
 
