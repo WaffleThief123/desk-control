@@ -66,9 +66,9 @@ static void rangingTaskInner()
     {
         if (vl53.dataReady())
         {
-            lastValue.valid = true;
             lastValue.value = vl53.distance();
             lastValue.time = millis();
+            lastValue.valid = true;
             vl53.clearInterrupt();
         }
         else
@@ -133,7 +133,7 @@ const ranging_result_t rangingGetResult()
     return lastValue;
 }
 
-const ranging_result_t rangingWaitForNewResult(unsigned long timeout, unsigned long lastTime)
+const ranging_result_t rangingWaitForNewResult(const unsigned long lastTime, unsigned long timeout)
 {
     const unsigned long startTime = millis();
     rangingChecks();
@@ -158,7 +158,7 @@ const ranging_result_t rangingWaitForNewResult(unsigned long timeout, unsigned l
 
 const ranging_result_t rangingWaitForNextResult(unsigned long timeout)
 {
-    return rangingWaitForNewResult(timeout, lastValue.time);
+    return rangingWaitForNewResult(lastValue.time, timeout);
 }
 
 const ranging_result_t rangingWaitForAnyResult(unsigned long timeout)
