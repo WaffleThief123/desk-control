@@ -75,17 +75,14 @@ static void rangingTaskInner()
         {
             uint8_t rangeStatus = 0;
             vl53.VL53L1X_GetRangeStatus(&rangeStatus);
-            if (rangeStatus)
+            if (rangeStatus != 0 && rangeStatus != 2 && rangeStatus != 4)
             {
                 mqttSetLastError("VL53L1X_GetRangeStatus: " + String(rangeStatus));
 
-                if (rangeStatus != 2 && rangeStatus != 4)
-                {
-                    rangingStop();
-                    vl53.end();
-                    rangingSensorInit();
-                    rangingStart();
-                }
+                rangingStop();
+                vl53.end();
+                rangingSensorInit();
+                rangingStart();
             }
         }
 
