@@ -133,7 +133,7 @@ const ranging_result_t rangingGetResult()
     return lastValue;
 }
 
-const ranging_result_t rangingWaitForResult()
+const ranging_result_t rangingWaitForNewResult()
 {
     const unsigned long startTime = millis();
     const unsigned long startResultTime = lastValue.time;
@@ -145,7 +145,25 @@ const ranging_result_t rangingWaitForResult()
         delay(1);
         if (millis() - startTime > RANGING_TIMEOUT)
         {
-            return INVALID_VALUE;   
+            return INVALID_VALUE;
+        }
+    }
+
+    return lastValue;
+}
+
+const ranging_result_t rangingWaitForAnyResult()
+{
+    const unsigned long startTime = millis();
+    rangingChecks();
+
+    while (!lastValue.valid)
+    {
+        lastQueryTime = millis();
+        delay(1);
+        if (millis() - startTime > RANGING_TIMEOUT)
+        {
+            return INVALID_VALUE;
         }
     }
 

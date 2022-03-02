@@ -17,7 +17,7 @@ static String lastErrorCode = "";
 void mqttSetLastError(String errorCode)
 {
     lastErrorCode = errorCode;
-    Serial.println("ERROR: " + errorCode);
+    SERIAL_PORT.println("ERROR: " + errorCode);
 }
 
 void mqttCallback(char *topic, byte *payload, unsigned int len)
@@ -26,14 +26,15 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
     memcpy(str, payload, len);
     str[len] = 0;
 
+    SERIAL_PORT.print("MQTT command: ");
+    SERIAL_PORT.println(str);
+
     DynamicJsonDocument doc(256);
     DeserializationError err = deserializeJson(doc, str);
     if (err != DeserializationError::Ok)
     {
-        Serial.print("MQTT JSON error: ");
-        Serial.println(err.c_str());
-        Serial.print("On input: ");
-        Serial.println(str);
+        SERIAL_PORT.print("MQTT JSON error: ");
+        SERIAL_PORT.println(err.c_str());
         return;
     }
 
@@ -91,12 +92,12 @@ bool mqttEnsureConnected()
 
     if (!mqttClient.connect(clientId.c_str(), MQTT_USERNAME, MQTT_PASSWORD))
     {
-        Serial.print("MQTT connection error: ");
-        Serial.println(mqttClient.state());
+        SERIAL_PORT.print("MQTT connection error: ");
+        SERIAL_PORT.println(mqttClient.state());
         return false;
     }
 
-    Serial.println("MQTT connected");
+    SERIAL_PORT.println("MQTT connected");
 
     mqttClient.subscribe(MQTT_TOPIC_SUB);
     return true;
@@ -138,7 +139,7 @@ void mqttSendJSON(const char *mqttId, const char *type, const char *data, int16_
 {
     if (range == -999)
     {
-        const ranging_result_t rangingResult = rangingWaitForResult();
+        const ranging_result_t rangingResult = rangingWaitForAnyResult();
         if (rangingResult.valid)
         {
             range = rangingResult.value;
@@ -169,7 +170,7 @@ void mqttSendJSON(const char *mqttId, const char *type, const char *data, int16_
 
     if (debugEnabled)
     {
-        Serial.println(buf);
+        SERIAL_PORT.println(buf);
     }
 
     mqttSend(buf);

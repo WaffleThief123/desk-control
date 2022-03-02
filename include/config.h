@@ -13,6 +13,8 @@
 #define PIN_ARROW_DOWN A1
 #define PIN_BUTTON A2
 
+#define SERIAL_PORT Serial
+
 // In mm
 #define DESK_HEIGHT_TOLERANCE 2
 #define DESK_FINE_ADJUST_RANGE 20

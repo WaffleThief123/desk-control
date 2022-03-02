@@ -13,40 +13,40 @@ static void serialHandleCommand()
     serialBuffer.trim();
     serialBuffer.toLowerCase();
 
-    Serial.print(serialBuffer);
-    Serial.print(" ");
+    SERIAL_PORT.print(serialBuffer);
+    SERIAL_PORT.print(" ");
 
     if (serialBuffer.equals("range"))
     {
-        const ranging_result_t rangingResult = rangingWaitForResult();
+        const ranging_result_t rangingResult = rangingWaitForNewResult();
         if (rangingResult.valid)
         {
-            Serial.print(rangingResult.value);
-            Serial.print(" @ ");
-            Serial.print(rangingResult.time);
+            SERIAL_PORT.print(rangingResult.value);
+            SERIAL_PORT.print(" @ ");
+            SERIAL_PORT.print(rangingResult.time);
         }
         else
         {
-            Serial.print("ERROR");
+            SERIAL_PORT.print("ERROR");
         }
     }
     else if (serialBuffer.equals("debug"))
     {
         debugEnabled = !debugEnabled;
-        Serial.print(debugEnabled);
+        SERIAL_PORT.print(debugEnabled);
     }
     else if (serialBuffer.equals("restart"))
     {
         if (!doRestart(false))
         {
-            Serial.print("NOT ALLOWED");
+            SERIAL_PORT.print("NOT ALLOWED");
         }
     }
     else if (serialBuffer.equals("restart force"))
     {
         if (!doRestart(true))
         {
-            Serial.print("NOT ALLOWED");
+            SERIAL_PORT.print("NOT ALLOWED");
         }
     }
     else if (serialBuffer.startsWith("adjust "))
@@ -55,19 +55,19 @@ static void serialHandleCommand()
     }
     else
     {
-        Serial.print("UNKNOWN COMMAND");
+        SERIAL_PORT.print("UNKNOWN COMMAND");
     }
 
-    Serial.println();
+    SERIAL_PORT.println();
 }
 
 static void serialTask(void *parameter)
 {
     while (1)
     {
-        while (Serial && Serial.available())
+        while (SERIAL_PORT && SERIAL_PORT.available())
         {
-            char c = Serial.read();
+            char c = SERIAL_PORT.read();
             if (c == '\n' || c == '\r')
             {
                 if (serialBuffer.length() > 0)
@@ -88,6 +88,6 @@ static void serialTask(void *parameter)
 void serialSetup()
 {
     serialBuffer.reserve(128);
-    Serial.begin(115200);
+    SERIAL_PORT.begin(115200);
     CREATE_TASK_IO(serialTask, "serial", 2, NULL);
 }

@@ -24,7 +24,7 @@ static void networkWatchdog(void *parameter)
 
         if (millis() - lastOkayTime > WIFI_MQTT_TIMEOUT)
         {
-            Serial.println("Network main timeout!");
+            SERIAL_PORT.println("Network main timeout!");
 
             if (doRestart(false))
             {
@@ -50,19 +50,19 @@ void setup()
     buttonsSetup();
 
     serialSetup();
-    Serial.println("Booting...");
+    SERIAL_PORT.println("Booting...");
 
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(WIFI_HOSTNAME);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-    Serial.println("WiFi initialized");
+    SERIAL_PORT.println("WiFi initialized");
 
     ArduinoOTA.setHostname(WIFI_HOSTNAME);
     ArduinoOTA.setPassword(OTA_PASSWORD);
     ArduinoOTA.begin();
 
-    Serial.println("OTA initialized");
+    SERIAL_PORT.println("OTA initialized");
 
     rangingSetup();
 
@@ -71,7 +71,7 @@ void setup()
     CREATE_TASK_IO(networkWatchdog, "networkWatchdog", 2, NULL);
     CREATE_TASK_IO(arduinoOTATask, "arduinoOTA", 1, NULL);
 
-    Serial.println("Boot complete");
+    SERIAL_PORT.println("Boot complete");
 
     mqttSendJSON(NULL, "status", "BOOT OK");
 }

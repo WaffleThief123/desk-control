@@ -181,10 +181,10 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
 
     target = _target;
 
-    const ranging_result_t rangingResult = rangingWaitForResult();
+    const ranging_result_t rangingResult = rangingWaitForNewResult();
     if (!rangingResult.valid)
     {
-        mqttSendJSON(mqttId, "adjust:stop", "INITIAL RANGING TIMEOUT");
+        mqttSendJSON(mqttId, "adjust:stop", "INITIAL RANGING TIMEOUT", -1);
         return;
     }
 
