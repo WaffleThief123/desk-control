@@ -66,6 +66,7 @@ static void rangingTaskInner()
     {
         if (vl53.dataReady())
         {
+            lastValue.valid = false;
             lastValue.value = vl53.distance();
             lastValue.time = millis();
             lastValue.valid = true;
