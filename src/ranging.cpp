@@ -17,14 +17,12 @@ static TaskHandle_t rangingTaskHandle;
 
 static void rangingStart()
 {
-    vl53.clearInterrupt();
     vl53.startRanging();
 }
 
 static void rangingStop()
 {
     vl53.stopRanging();
-    vl53.clearInterrupt();
 }
 
 static void rangingSensorInit()
@@ -82,6 +80,9 @@ static void rangingTaskInner()
 
                 rangingStop();
                 vl53.end();
+                Wire.end();
+                delay(100);
+                Wire.begin();
                 rangingSensorInit();
                 rangingStart();
             }
