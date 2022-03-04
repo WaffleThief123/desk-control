@@ -2,16 +2,15 @@
 
 #include "config_private.h"
 
-#define PIN_SDA SDA
-#define PIN_SCL SCL
+#define PIN_SDA 8
+#define PIN_SCL 9
 
-#define PIN_RELAY_UP 12
-#define PIN_RELAY_DOWN 13
-#define PIN_LED_DATA 27
+#define PIN_RELAY_UP 10
+#define PIN_RELAY_DOWN 11
 
-#define PIN_ARROW_UP A0
-#define PIN_ARROW_DOWN A1
-#define PIN_BUTTON A2
+#define PIN_ARROW_UP 17
+#define PIN_ARROW_DOWN 18
+#define PIN_BUTTON 14
 
 #define SERIAL_PORT Serial
 
