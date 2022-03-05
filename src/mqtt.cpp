@@ -10,7 +10,7 @@
 #include "ranging.h"
 #include "util.h"
 
-#define MQTT_MAX_LEN 255
+#define MQTT_MAX_LEN 256
 
 static WiFiClient espMqttClient;
 static PubSubClient mqttClient(espMqttClient);
@@ -32,7 +32,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
     SERIAL_PORT.print("MQTT command: ");
     SERIAL_PORT.println(str);
 
-    DynamicJsonDocument doc(256);
+    DynamicJsonDocument doc(MQTT_MAX_LEN);
     DeserializationError err = deserializeJson(doc, str);
     if (err != DeserializationError::Ok)
     {
@@ -116,7 +116,7 @@ static void mqttLoopTask(void *parameter)
         {
             mqttClient.loop();
         
-            char mqttMessage[256];
+            char mqttMessage[MQTT_MAX_LEN];
             if (xQueueReceive(mqttMessageQueue, &mqttMessage, 0) == pdPASS)
             {
                 mqttClient.publish(MQTT_TOPIC_PUB, mqttMessage);
@@ -150,9 +150,9 @@ void mqttSendJSON(const char *mqttId, const char *type, const char *data, int16_
     const int8_t movingDirection = deskGetMovingDirection();
     const int16_t target = deskGetTarget();
 
-    char buf[256];
+    char buf[MQTT_MAX_LEN];
 
-    StaticJsonDocument<256> doc;
+    StaticJsonDocument<MQTT_MAX_LEN> doc;
     if (mqttId && mqttId[0])
     {
         doc["id"] = mqttId;
