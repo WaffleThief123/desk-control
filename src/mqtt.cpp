@@ -10,13 +10,16 @@
 #include "ranging.h"
 #include "util.h"
 
+#define MQTT_MAX_LEN 255
+
 static WiFiClient espMqttClient;
 static PubSubClient mqttClient(espMqttClient);
 
-static String lastErrorCode = "";
+static QueueHandle_t mqttMessageQueue;
+
 void mqttSetLastError(String errorCode)
 {
-    lastErrorCode = errorCode;
+    mqttSendJSON(NULL, "error", errorCode.c_str(), -1);
     SERIAL_PORT.println("ERROR: " + errorCode);
 }
 
@@ -112,10 +115,11 @@ static void mqttLoopTask(void *parameter)
         if (mqttEnsureConnected())
         {
             mqttClient.loop();
-            if (!lastErrorCode.isEmpty())
+        
+            char mqttMessage[256];
+            if (xQueueReceive(mqttMessageQueue, &mqttMessage, 0) == pdPASS)
             {
-                mqttSendJSON(NULL, "error", lastErrorCode.c_str(), -1);
-                lastErrorCode = "";
+                mqttClient.publish(MQTT_TOPIC_PUB, mqttMessage);
             }
         }
         delay(10);
@@ -124,17 +128,9 @@ static void mqttLoopTask(void *parameter)
 
 void mqttSetup()
 {
+    mqttMessageQueue = xQueueCreate(10, MQTT_MAX_LEN);
     mqttEnsureConnected();
     CREATE_TASK_IO(mqttLoopTask, "mqttLoop", 10, NULL);
-}
-
-void mqttSend(const char *data)
-{
-    if (!mqttEnsureConnected())
-    {
-        return;
-    }
-    mqttClient.publish(MQTT_TOPIC_PUB, data);
 }
 
 void mqttSendJSON(const char *mqttId, const char *type, const char *data, int16_t range)
@@ -175,5 +171,5 @@ void mqttSendJSON(const char *mqttId, const char *type, const char *data, int16_
         SERIAL_PORT.println(buf);
     }
 
-    mqttSend(buf);
+    xQueueSend(mqttMessageQueue, buf, 0);
 }
