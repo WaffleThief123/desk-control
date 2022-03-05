@@ -14,6 +14,8 @@ static ranging_result_t lastValue;
 static ranging_result_t INVALID_VALUE;
 static unsigned long lastQueryTime = 0;
 static TaskHandle_t rangingTaskHandle;
+static uint8_t rangeErrorRepeats = 0;
+static uint8_t rangeLastError = 0;
 
 static void rangingStart()
 {
@@ -74,17 +76,35 @@ static void rangingTaskInner()
         {
             uint8_t rangeStatus = 0;
             vl53.VL53L1X_GetRangeStatus(&rangeStatus);
-            if (rangeStatus != 0 && rangeStatus != 2 && rangeStatus != 4)
+            if (rangeStatus)
             {
-                mqttSetLastError("VL53L1X_GetRangeStatus: " + String(rangeStatus));
-
-                rangingStop();
-                vl53.end();
-                Wire.end();
-                delay(100);
-                Wire.begin();
-                rangingSensorInit();
-                rangingStart();
+                mqttSetLastError("VL53L1X_GetRangeStatus: " + String(rangeStatus, HEX) + " [" + String(rangeErrorRepeats) + "]");
+                if (rangeLastError == rangeStatus)
+                {
+                    rangeErrorRepeats++;
+                    if (rangeErrorRepeats > RANGING_MAX_ERROR_REPEATS)
+                    {
+                        if (rangeStatus == 0xFF)
+                        {
+                            rangingStop();
+                            vl53.end();
+                            delay(100);
+                            rangingSensorInit();
+                            rangingStart();
+                        }
+                        rangeErrorRepeats = 0;
+                    }
+                }
+                else
+                {
+                    rangeErrorRepeats = 0;
+                    rangeLastError = rangeStatus;
+                }
+            }
+            else
+            {
+                rangeErrorRepeats = 0;
+                rangeLastError = 0;
             }
         }
 
@@ -102,6 +122,8 @@ static void rangingTask(void *parameter)
 
     while (1)
     {
+        rangeLastError = 0;
+        rangeErrorRepeats = 0;
         if (shouldRange())
         {
             rangingTaskInner();
