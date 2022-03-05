@@ -141,9 +141,15 @@ static void deskMoveTask(void *parameter)
 static void deskMoveStatusTask(void *parameter)
 {
     delay(100);
+    unsigned long lastRangeResultTime = 0;
     while (deskMovingDirection)
     {
-        mqttSendJSON(mqttId, "adjust:move", String(deskSpeed).c_str());
+        const ranging_result_t rangingResult = rangingWaitForNewResult(lastRangeResultTime);
+        if (rangingResult.valid)
+        {
+            lastRangeResultTime = rangingResult.time;
+            mqttSendJSON(mqttId, "adjust:move", String(deskSpeed).c_str(), rangingResult.value);
+        }
         delay(100);
     }
 
@@ -199,6 +205,7 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
     deskMovingDirection = (target > startDistance) ? 1 : -1;
     mqttSendJSON(mqttId, "adjust:start", "", startDistance);
 
+    deskSpeed = 0;
     failedSpeedTries = 0;
     speedLastDistance = startDistance;
     speedLastTime = startTime;
