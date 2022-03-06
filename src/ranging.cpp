@@ -6,8 +6,6 @@
 #include "util.h"
 #include "mqtt.h"
 
-#define RANGING_UNUSED_TIMEOUT 2000
-
 Adafruit_VL53L1X vl53 = Adafruit_VL53L1X();
 
 static ranging_result_t lastValue;
