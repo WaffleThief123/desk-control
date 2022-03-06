@@ -23,17 +23,6 @@ void rangingReleaseBit(uint8_t bit)
     rangingRequirementsBit &= ~bit;
 }
 
-static void rangingStart()
-{
-    vl53.ClearInterrupt();
-    vl53.StartRanging();
-}
-
-static void rangingStop()
-{
-    vl53.StopRanging();
-}
-
 static void rangingSensorInit()
 {
     VL53L1_Error status = vl53.Begin(0x29);
@@ -42,8 +31,6 @@ static void rangingSensorInit()
         mqttSetLastError("VL53L1X_Begin: " + String(status));
         return;
     }
-
-    rangingStop();
 
 #ifdef RANGING_DISTANCE_MODE
     vl53.SetDistanceMode(RANGING_DISTANCE_MODE);
@@ -62,16 +49,13 @@ static void rangingSensorInit()
 #endif
 }
 
-static bool shouldRange()
-{
-    return rangingRequirementsBit;
-}
-
 static void rangingTaskInner()
 {
-    rangingStart();
+    vl53.ClearInterrupt();
+    vl53.StartRanging();
+    mqttSetDebug("RANGING START");
 
-    while (shouldRange())
+    while (rangingRequirementsBit)
     {
         uint8_t dataReady = false;
         VL53L1_Error status = vl53.CheckForDataReady(&dataReady);
@@ -95,7 +79,8 @@ static void rangingTaskInner()
         delay(10);
     }
 
-    rangingStop();
+    mqttSetDebug("RANGING STOP");
+    vl53.StopRanging();
 }
 
 static void rangingTask(void *parameter)
@@ -105,7 +90,7 @@ static void rangingTask(void *parameter)
 
     while (1)
     {
-        if (shouldRange())
+        if (rangingRequirementsBit)
         {
             rangingTaskInner();
             lastValue.valid = false;
@@ -124,7 +109,7 @@ void rangingSetup()
 
 static bool rangingChecks()
 {
-    if (!shouldRange())
+    if (!rangingRequirementsBit)
     {
         return false;
     }

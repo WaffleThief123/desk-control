@@ -23,6 +23,16 @@ void mqttSetLastError(String errorCode)
     SERIAL_PORT.println("ERROR: " + errorCode);
 }
 
+void mqttSetDebug(String debugMsg)
+{
+    if (!debugEnabled)
+    {
+        return;
+    }
+    mqttSendJSON(NULL, "debug", debugMsg.c_str(), -1);
+    SERIAL_PORT.println("DEBUG: " + debugMsg);        
+}
+
 void mqttCallback(char *topic, byte *payload, unsigned int len)
 {
     char str[len + 1];
@@ -61,6 +71,11 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
         rangingAcquireBit(RANGING_BIT_MQTT);
         mqttSendJSON(id, "range", "OK");
         rangingReleaseBit(RANGING_BIT_MQTT);
+    }
+    else if (strcmp(cmd, "debug") == 0)
+    {
+        debugEnabled = doc["enable"].as<bool>();
+        mqttSendJSON(id, "debug", debugEnabled ? "ON" : "OFF", -1);
     }
     else if (strcmp(cmd, "restart") == 0)
     {
