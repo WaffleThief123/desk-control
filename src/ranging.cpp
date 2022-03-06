@@ -12,8 +12,6 @@ static ranging_result_t lastValue;
 static ranging_result_t INVALID_VALUE;
 static unsigned long lastQueryTime = 0;
 static TaskHandle_t rangingTaskHandle;
-static uint8_t rangeErrorRepeats = 0;
-static uint8_t rangeLastError = 0;
 
 static void rangingStart()
 {
@@ -66,8 +64,8 @@ static void rangingTaskInner()
     while (shouldRange())
     {
         uint8_t dataReady = false;
-        vl53.CheckForDataReady(&dataReady);
-        if (dataReady)
+        VL53L1_Error status = vl53.CheckForDataReady(&dataReady);
+        if (status == VL53L1_ERROR_NONE && dataReady)
         {
             lastValue.valid = false;
             vl53.GetDistanceInMm(&lastValue.value);
@@ -79,31 +77,8 @@ static void rangingTaskInner()
         {
             ERangeStatus rangeStatus;
             vl53.GetRangeStatus(&rangeStatus);
-            if (rangeStatus != RangeValid)
-            {
-                mqttSetLastError("VL53L1X_GetRangeStatus: " + String(rangeStatus, HEX) + " [" + String(rangeErrorRepeats) + "]");
-                if (rangeLastError == rangeStatus)
-                {
-                    rangeErrorRepeats++;
-                    if (rangeErrorRepeats > RANGING_MAX_ERROR_REPEATS && rangeStatus >= 8)
-                    {
-                        rangeErrorRepeats = 0;
-                        rangingStop();
-                        delay(200);
-                        rangingSensorInit();
-                        rangingStart();
-                    }
-                }
-                else
-                {
-                    rangeErrorRepeats = 0;
-                    rangeLastError = rangeStatus;
-                }
-            }
-            else
-            {
-                rangeErrorRepeats = 0;
-                rangeLastError = 0;
+            if (rangeStatus != RangeValid || status != VL53L1_ERROR_NONE) {
+                mqttSetLastError("VL53L1X_GetRangeStatus: " + String(rangeStatus, HEX) + " <" + String(status, HEX) + ">");
             }
         }
 
@@ -120,8 +95,6 @@ static void rangingTask(void *parameter)
 
     while (1)
     {
-        rangeLastError = 0;
-        rangeErrorRepeats = 0;
         if (shouldRange())
         {
             rangingTaskInner();
