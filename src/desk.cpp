@@ -7,7 +7,6 @@
 #include "mqtt.h"
 #include "util.h"
 
-static int16_t startDistance;
 static unsigned long timeout;
 static unsigned long startTime;
 static int failedSpeedTries;
@@ -29,7 +28,7 @@ static void deskStopInternal()
     digitalWrite(PIN_RELAY_DOWN, LOW);
 }
 
-void deskStop()
+static void deskStopWait()
 {
     deskStopInternal();
 
@@ -37,6 +36,16 @@ void deskStop()
     {
         delay(1);
     }
+}
+
+void deskStop()
+{
+    if (!xSemaphoreTake(deskAdjustMutex, portMAX_DELAY))
+    {
+        return;
+    }
+    deskStopWait();
+    xSemaphoreGive(deskAdjustMutex);
 }
 
 static void deskMoveTask(void *parameter)
@@ -137,17 +146,21 @@ static void deskMoveTask(void *parameter)
 static void deskMoveStatusTask(void *parameter)
 {
     rangingAcquireBit(RANGING_BIT_DESK_STATUS);
-    delay(100);
     unsigned long lastRangeResultTime = 0;
+    uint8_t ctr = 0;
     while (deskMovingDirection)
     {
-        const ranging_result_t rangingResult = rangingWaitForNewResult(lastRangeResultTime);
-        if (rangingResult.valid)
+        if (++ctr >= 10)
         {
-            lastRangeResultTime = rangingResult.time;
-            mqttSendJSON(mqttId, "adjust:move", String(deskSpeed).c_str(), rangingResult.value);
+            ctr = 0;
+            const ranging_result_t rangingResult = rangingWaitForNewResult(lastRangeResultTime);
+            if (rangingResult.valid)
+            {
+                lastRangeResultTime = rangingResult.time;
+                mqttSendJSON(mqttId, "adjust:move", String(deskSpeed).c_str(), rangingResult.value);
+            }
         }
-        delay(100);
+        delay(10);
     }
 
     rangingReleaseBit(RANGING_BIT_DESK_STATUS);
@@ -170,7 +183,9 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
         return;
     }
 
-    deskStop();
+    rangingAcquireBit(RANGING_BIT_DESK_ADJUST);
+
+    deskStopWait();
 
     if (_mqttId)
     {
@@ -183,6 +198,7 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
 
     if (_target < DESK_HEIGHT_MIN || _target > DESK_HEIGHT_MAX)
     {
+        rangingReleaseBit(RANGING_BIT_DESK_ADJUST);
         xSemaphoreGive(deskAdjustMutex);
         return;
     }
@@ -194,20 +210,20 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
     if (!rangingResult.valid)
     {
         mqttSendJSON(mqttId, "adjust:stop", "INITIAL RANGING TIMEOUT", -1);
-        rangingReleaseBit(RANGING_BIT_DESK_MOVE);
+        rangingReleaseBit(RANGING_BIT_DESK_MOVE | RANGING_BIT_DESK_ADJUST);
         xSemaphoreGive(deskAdjustMutex);
         return;
     }
 
     startTime = rangingResult.time;
-    startDistance = rangingResult.value;
+    const int16_t startDistance = rangingResult.value;
 
     timeout = abs(target - startDistance) * DESK_ADJUST_TIMEOUT_PER_MM;
 
     if (abs(target - startDistance) < DESK_HEIGHT_TOLERANCE)
     {
         mqttSendJSON(mqttId, "adjust:stop", "NO CHANGE", startDistance);
-        rangingReleaseBit(RANGING_BIT_DESK_MOVE);
+        rangingReleaseBit(RANGING_BIT_DESK_MOVE | RANGING_BIT_DESK_ADJUST);
         xSemaphoreGive(deskAdjustMutex);
         return;
     }
@@ -223,6 +239,7 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
 
     CREATE_TASK(deskMoveTask, "deskMove", 100, &moveTaskHandle);
     CREATE_TASK_IO(deskMoveStatusTask, "deskMoveStatus", 20, &moveStatusTaskHandle);
+    rangingReleaseBit(RANGING_BIT_DESK_ADJUST);
     xSemaphoreGive(deskAdjustMutex);
 }
 
