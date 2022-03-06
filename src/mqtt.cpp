@@ -29,8 +29,11 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
     memcpy(str, payload, len);
     str[len] = 0;
 
-    SERIAL_PORT.print("MQTT command: ");
-    SERIAL_PORT.println(str);
+    if (debugEnabled)
+    {
+        SERIAL_PORT.print("MQTT command: ");
+        SERIAL_PORT.println(str);
+    }
 
     DynamicJsonDocument doc(MQTT_MAX_LEN);
     DeserializationError err = deserializeJson(doc, str);
