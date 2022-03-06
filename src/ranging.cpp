@@ -110,7 +110,7 @@ static void rangingTask(void *parameter)
             rangingTaskInner();
             lastValue.valid = false;
         }
-        delay(10);
+        delay(RANGING_TIMING_BUDGET + 10);
     }
 }
 
