@@ -80,17 +80,14 @@ static void rangingTaskInner()
                 if (rangeLastError == rangeStatus)
                 {
                     rangeErrorRepeats++;
-                    if (rangeErrorRepeats > RANGING_MAX_ERROR_REPEATS)
+                    if (rangeErrorRepeats > RANGING_MAX_ERROR_REPEATS && rangeStatus != 1 && rangeStatus != 2 && rangeStatus != 4 && rangeStatus != 7)
                     {
-                        if (rangeStatus != 1 && rangeStatus != 2 && rangeStatus != 4 && rangeStatus != 7)
-                        {
-                            rangingStop();
-                            vl53.end();
-                            delay(100);
-                            rangingSensorInit();
-                            rangingStart();
-                        }
                         rangeErrorRepeats = 0;
+                        rangingStop();
+                        vl53.end();
+                        delay(100);
+                        rangingSensorInit();
+                        rangingStart();
                     }
                 }
                 else
@@ -114,7 +111,7 @@ static void rangingTaskInner()
 
 static void rangingTask(void *parameter)
 {
-    Wire.begin(PIN_SDA, PIN_SCL, 10000U);
+    Wire.begin(PIN_SDA, PIN_SCL);
     rangingSensorInit();
 
     while (1)
