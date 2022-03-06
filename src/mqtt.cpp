@@ -58,19 +58,21 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
     }
     else if (strcmp(cmd, "range") == 0)
     {
+        rangingAcquireBit(RANGING_BIT_MQTT);
         mqttSendJSON(id, "range", "OK");
+        rangingReleaseBit(RANGING_BIT_MQTT);
     }
     else if (strcmp(cmd, "restart") == 0)
     {
         bool force = doc["force"].as<bool>();
         if (!doRestart(force))
         {
-            mqttSendJSON(id, "status", "RESTART NOT ALLOWED");
+            mqttSendJSON(id, "status", "RESTART NOT ALLOWED" , -1);
         }
     }
     else
     {
-        mqttSendJSON(id, "error", "UNKNOWN COMMAND");
+        mqttSendJSON(id, "error", "UNKNOWN COMMAND", -1);
     }
 }
 
@@ -107,7 +109,10 @@ bool mqttEnsureConnected()
 
     mqttClient.subscribe(MQTT_TOPIC_SUB);
 
+    rangingAcquireBit(RANGING_BIT_MQTT);
     mqttSendJSON(NULL, "status", "Connected");
+    rangingReleaseBit(RANGING_BIT_MQTT);
+
     return true;
 }
 

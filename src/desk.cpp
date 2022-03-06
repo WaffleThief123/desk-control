@@ -31,22 +31,25 @@ static void deskStopInternal()
 void deskStop()
 {
     deskStopInternal();
-    if (moveTaskHandle != NULL)
-    {
-        vTaskDelete(moveTaskHandle);
-        moveTaskHandle = NULL;
-    }
     if (moveStatusTaskHandle != NULL)
     {
         vTaskDelete(moveStatusTaskHandle);
         moveStatusTaskHandle = NULL;
+        rangingReleaseBit(RANGING_BIT_DESK_STATUS);
+    }
+    if (moveTaskHandle != NULL)
+    {
+        vTaskDelete(moveTaskHandle);
+        moveTaskHandle = NULL;
         mqttSendJSON(mqttId, "adjust:stop", "STOPPED");
         mqttId[0] = 0;
+        rangingReleaseBit(RANGING_BIT_DESK_MOVE);
     }
 }
 
 static void deskMoveTask(void *parameter)
 {
+    rangingAcquireBit(RANGING_BIT_DESK_MOVE);
     String stopReason = "STOPPED";
 
     if (deskMovingDirection > 0)
@@ -135,11 +138,13 @@ static void deskMoveTask(void *parameter)
     mqttId[0] = 0;
 
     moveTaskHandle = NULL;
+    rangingReleaseBit(RANGING_BIT_DESK_MOVE);
     vTaskDelete(NULL);
 }
 
 static void deskMoveStatusTask(void *parameter)
 {
+    rangingAcquireBit(RANGING_BIT_DESK_STATUS);
     delay(100);
     unsigned long lastRangeResultTime = 0;
     while (deskMovingDirection)
@@ -154,6 +159,7 @@ static void deskMoveStatusTask(void *parameter)
     }
 
     moveStatusTaskHandle = NULL;
+    rangingReleaseBit(RANGING_BIT_DESK_STATUS);
     vTaskDelete(NULL);
 }
 
@@ -182,6 +188,7 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
         return;
     }
 
+    rangingAcquireBit(RANGING_BIT_DESK_MOVE);
     target = _target;
 
     const ranging_result_t rangingResult = rangingWaitForNextResult();
@@ -199,6 +206,7 @@ void deskAdjustHeight(int16_t _target, const char *_mqttId)
     if (abs(target - startDistance) < DESK_HEIGHT_TOLERANCE)
     {
         mqttSendJSON(mqttId, "adjust:stop", "NO CHANGE", startDistance);
+        rangingReleaseBit(RANGING_BIT_DESK_MOVE);
         return;
     }
 

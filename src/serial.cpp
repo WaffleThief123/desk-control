@@ -18,6 +18,7 @@ static void serialHandleCommand()
 
     if (serialBuffer.equals("range"))
     {
+        rangingAcquireBit(RANGING_BIT_SERIAL);
         const ranging_result_t rangingResult = rangingWaitForNextResult();
         if (rangingResult.valid)
         {
@@ -29,6 +30,7 @@ static void serialHandleCommand()
         {
             SERIAL_PORT.print("ERROR");
         }
+        rangingReleaseBit(RANGING_BIT_SERIAL);
     }
     else if (serialBuffer.equals("debug"))
     {

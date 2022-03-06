@@ -10,8 +10,18 @@ VL53L1X_ULD vl53 = VL53L1X_ULD();
 
 static ranging_result_t lastValue;
 static ranging_result_t INVALID_VALUE;
-static unsigned long lastQueryTime = 0;
 static TaskHandle_t rangingTaskHandle;
+static uint8_t rangingRequirementsBit = 0;
+
+void rangingAcquireBit(uint8_t bit)
+{
+    rangingRequirementsBit |= bit;
+}
+
+void rangingReleaseBit(uint8_t bit)
+{
+    rangingRequirementsBit &= ~bit;
+}
 
 static void rangingStart()
 {
@@ -54,7 +64,7 @@ static void rangingSensorInit()
 
 static bool shouldRange()
 {
-    return millis() - lastQueryTime <= RANGING_UNUSED_TIMEOUT;
+    return rangingRequirementsBit;
 }
 
 static void rangingTaskInner()
@@ -111,20 +121,28 @@ void rangingSetup()
     CREATE_TASK(rangingTask, "ranging", 50, &rangingTaskHandle);
 }
 
-static void rangingChecks()
+static bool rangingChecks()
 {
-    lastQueryTime = millis();
+    if (!shouldRange())
+    {
+        return false;
+    }
 
     if (lastValue.valid && millis() - lastValue.time > RANGING_TIMEOUT)
     {
         lastValue.valid = false;
     }
+
+    return true;
 }
 
 const ranging_result_t rangingWaitForNewResult(const unsigned long lastTime, unsigned long timeout)
 {
     const unsigned long startTime = millis();
-    rangingChecks();
+    if (!rangingChecks())
+    {
+        return INVALID_VALUE;
+    }
 
     if (timeout == 0)
     {
@@ -133,7 +151,6 @@ const ranging_result_t rangingWaitForNewResult(const unsigned long lastTime, uns
 
     while (!lastValue.valid || lastValue.time == lastTime)
     {
-        lastQueryTime = millis();
         delay(1);
         if (millis() - startTime > timeout)
         {
@@ -152,7 +169,10 @@ const ranging_result_t rangingWaitForNextResult(unsigned long timeout)
 const ranging_result_t rangingWaitForAnyResult(unsigned long timeout)
 {
     const unsigned long startTime = millis();
-    rangingChecks();
+    if (!rangingChecks())
+    {
+        return INVALID_VALUE;
+    }
 
     if (timeout == 0)
     {
@@ -161,7 +181,6 @@ const ranging_result_t rangingWaitForAnyResult(unsigned long timeout)
 
     while (!lastValue.valid)
     {
-        lastQueryTime = millis();
         delay(1);
         if (millis() - startTime > timeout)
         {
