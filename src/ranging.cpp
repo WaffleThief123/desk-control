@@ -1,12 +1,12 @@
 #include <Wire.h>
-#include <Adafruit_VL53L1X.h>
+#include <VL53L1X_ULD.h>
 
 #include "ranging.h"
 #include "config.h"
 #include "util.h"
 #include "mqtt.h"
 
-Adafruit_VL53L1X vl53 = Adafruit_VL53L1X();
+VL53L1X_ULD vl53 = VL53L1X_ULD();
 
 static ranging_result_t lastValue;
 static ranging_result_t INVALID_VALUE;
@@ -17,37 +17,40 @@ static uint8_t rangeLastError = 0;
 
 static void rangingStart()
 {
-    vl53.startRanging();
+    vl53.ClearInterrupt();
+    vl53.StartRanging();
 }
 
 static void rangingStop()
 {
-    vl53.stopRanging();
+    vl53.StopRanging();
 }
 
 static void rangingSensorInit()
 {
-    if (!vl53.begin(0x29, &Wire))
+    VL53L1_Error status = vl53.Begin(0x29);
+    if (status != VL53L1_ERROR_NONE)
     {
-        mqttSetLastError("VL53L1X_Begin: " + String(vl53.vl_status));
+        mqttSetLastError("VL53L1X_Begin: " + String(status));
         return;
     }
 
     rangingStop();
 
 #ifdef RANGING_DISTANCE_MODE
-    vl53.VL53L1X_SetDistanceMode(RANGING_DISTANCE_MODE);
+    vl53.SetDistanceMode(RANGING_DISTANCE_MODE);
 #endif
 
 #ifdef RANGING_TIMING_BUDGET
-    vl53.setTimingBudget(RANGING_TIMING_BUDGET);
+    vl53.SetTimingBudgetInMs(RANGING_TIMING_BUDGET);
+    vl53.SetInterMeasurementInMs(RANGING_TIMING_BUDGET);
 #endif
 
 #ifdef RANGING_ROI_CENTER
-    vl53.VL53L1X_SetROICenter(RANGING_ROI_CENTER);
+    vl53.SetROICenter(RANGING_ROI_CENTER);
 #endif
 #ifdef RANGING_ROI_WIDTH
-    vl53.VL53L1X_SetROI(RANGING_ROI_WIDTH, RANGING_ROI_HEIGHT);
+    vl53.SetROI(RANGING_ROI_WIDTH, RANGING_ROI_HEIGHT);
 #endif
 }
 
@@ -62,30 +65,31 @@ static void rangingTaskInner()
 
     while (shouldRange())
     {
-        if (vl53.dataReady())
+        uint8_t dataReady = false;
+        vl53.CheckForDataReady(&dataReady);
+        if (dataReady)
         {
             lastValue.valid = false;
-            lastValue.value = vl53.distance();
+            vl53.GetDistanceInMm(&lastValue.value);
             lastValue.time = millis();
             lastValue.valid = true;
-            vl53.clearInterrupt();
+            vl53.ClearInterrupt();
         }
         else
         {
-            uint8_t rangeStatus = 0;
-            vl53.VL53L1X_GetRangeStatus(&rangeStatus);
-            if (rangeStatus)
+            ERangeStatus rangeStatus;
+            vl53.GetRangeStatus(&rangeStatus);
+            if (rangeStatus != RangeValid)
             {
                 mqttSetLastError("VL53L1X_GetRangeStatus: " + String(rangeStatus, HEX) + " [" + String(rangeErrorRepeats) + "]");
                 if (rangeLastError == rangeStatus)
                 {
                     rangeErrorRepeats++;
-                    if (rangeErrorRepeats > RANGING_MAX_ERROR_REPEATS && rangeStatus != 1 && rangeStatus != 2 && rangeStatus != 4 && rangeStatus != 7)
+                    if (rangeErrorRepeats > RANGING_MAX_ERROR_REPEATS && rangeStatus >= 8)
                     {
                         rangeErrorRepeats = 0;
                         rangingStop();
-                        vl53.end();
-                        delay(100);
+                        delay(200);
                         rangingSensorInit();
                         rangingStart();
                     }
