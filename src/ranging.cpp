@@ -82,7 +82,7 @@ static void rangingTaskInner()
                     rangeErrorRepeats++;
                     if (rangeErrorRepeats > RANGING_MAX_ERROR_REPEATS)
                     {
-                        if (rangeStatus != 2 && rangeStatus != 4)
+                        if (rangeStatus != 1 && rangeStatus != 2 && rangeStatus != 4 && rangeStatus != 7)
                         {
                             rangingStop();
                             vl53.end();

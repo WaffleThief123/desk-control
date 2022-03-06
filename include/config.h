@@ -26,8 +26,8 @@
 #define DESK_SPEED_MIN 10
 #define DESK_SPEED_TRIES 3
 
-#define DESK_HEIGHT_MIN 650
-#define DESK_HEIGHT_MAX 1100
+#define DESK_HEIGHT_MIN 630
+#define DESK_HEIGHT_MAX 1050
 
 /* Table of SPAD locations. Each SPAD has a number which is not obvious.
  *
