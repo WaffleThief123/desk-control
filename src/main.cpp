@@ -19,6 +19,12 @@ static void networkWatchdog(void *parameter)
     {
         delay(1000);
 
+        if (!WiFi.isConnected())
+        {
+            WiFi.reconnect();
+            WiFi.waitForConnectResult();
+        }
+
         static unsigned long lastOkayTime = millis();
         if (WiFi.isConnected() && mqttIsConnected())
         {
@@ -59,6 +65,8 @@ void setup()
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(WIFI_HOSTNAME);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+    WiFi.waitForConnectResult();
 
     SERIAL_PORT.println("WiFi initialized");
 

@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 void deskSetup();
-void deskAdjustHeight(int16_t _target, const char *_mqttId);
+void deskAdjustHeight(int16_t _target);
 int8_t deskGetMovingDirection();
 void deskStop();
 int16_t deskGetTarget();

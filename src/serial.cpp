@@ -53,7 +53,7 @@ static void serialHandleCommand()
     }
     else if (serialBuffer.startsWith("adjust "))
     {
-        deskAdjustHeight(serialBuffer.substring(7).toInt(), NULL);
+        deskAdjustHeight(serialBuffer.substring(7).toInt());
     }
     else
     {

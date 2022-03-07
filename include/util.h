@@ -1,5 +1,8 @@
 #pragma once
 
+#define STRINGIFY_(x) #x
+#define STRINGIFY(x) STRINGIFY_(x)
+
 #define RTOS_STACK_SIZE 4096
 #define ARDUINO_CORE 1
 #define IO_CORE 0
