@@ -89,7 +89,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
             mqttFullRefresh();
         }
     }
-    else if (strcmp(topic, deskControlDevice.makeMQTTCommandTopic().c_str()) == 0)
+    else if (strcmp(topic, deskControlDevice.getMQTTCommandTopic().c_str()) == 0)
     {
         const int num = atoi(str);
         if (num > 0)
@@ -97,7 +97,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
             deskAdjustHeight(num);
         }
     }
-    else if (strcmp(topic, deskStopDevice.makeMQTTCommandTopic().c_str()) == 0)
+    else if (strcmp(topic, deskStopDevice.getMQTTCommandTopic().c_str()) == 0)
     {
         deskStop();
     }
@@ -133,8 +133,8 @@ bool mqttEnsureConnected()
         return false;
     }
 
-    mqttClient.subscribe(deskControlDevice.makeMQTTCommandTopic().c_str());
-    mqttClient.subscribe(deskStopDevice.makeMQTTCommandTopic().c_str());
+    mqttClient.subscribe(deskControlDevice.getMQTTCommandTopic().c_str());
+    mqttClient.subscribe(deskStopDevice.getMQTTCommandTopic().c_str());
     mqttClient.subscribe(HA_STATUS_TOPIC);
 
     SERIAL_PORT.println("MQTT connected");
