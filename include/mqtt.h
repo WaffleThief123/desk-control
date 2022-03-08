@@ -9,4 +9,3 @@ void mqttSetLastError(String lastError);
 void mqttSetDebug(String debugMsg);
 void mqttDoHeightUpdate();
 void mqttSetStopReason(String stopReason);
-void mqttDoAttributeUpdate();

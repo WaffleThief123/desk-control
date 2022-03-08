@@ -2,7 +2,7 @@
 #include <PubSubClient.h>
 #include <WiFi.h>
 #include <ArduinoJson.h>
-#include <HAMqttDevice.h>
+#include <HomeAssistantMQTT.h>
 
 #include "mqtt.h"
 
@@ -11,45 +11,52 @@
 #include "ranging.h"
 #include "util.h"
 
-#define HA_STATUS_TOPIC "homeassistant/status"
+#define TAKE_ATTRIBUTE_SEMAPHORE() xSemaphoreTake(attributeSetMutex, 10 / portTICK_PERIOD_MS)
+#define GIVE_ATTRIBUTE_SEMAPHORE() xSemaphoreGive(attributeSetMutex)
 
 static WiFiClient espMqttClient;
 static PubSubClient mqttClient(espMqttClient);
 
 static bool doHeightUpdate = false;
-static bool doAttributeUpdate = false;
-static bool doConfigUpdate = false;
+static bool doDirectionUpdate = false;
+static unsigned long lastHeightUpdateTime = 0;
+static int8_t lastMovingDirection = -9;
+static SemaphoreHandle_t attributeSetMutex;
 
-static HAMqttDevice deskControlDevice(DEVICE_NAME " Control", HAMqttDevice::NUMBER, "homeassistant");
-static HAMqttDevice deskStateDevice(DEVICE_NAME " State", HAMqttDevice::SENSOR, "homeassistant");
-static HAMqttDevice deskStopDevice(DEVICE_NAME " Stop", HAMqttDevice::BUTTON, "homeassistant");
+static HomeAssistantMQTTDevice deskControlDevice("number", DEVICE_NAME " Control");
+static HomeAssistantMQTTDevice deskStateDevice("sensor", DEVICE_NAME " State");
+static HomeAssistantMQTTDevice deskStopDevice("button", DEVICE_NAME " Stop");
 
-static String lastError;
-static String stopReason;
-
-static unsigned long lastHeightUpdateTime;
+static void mqttFullRefresh()
+{
+    doHeightUpdate = true;
+    doDirectionUpdate = true;
+    deskControlDevice.refresh();
+    deskStateDevice.refresh();
+    deskStopDevice.refresh();
+}
 
 void mqttDoHeightUpdate()
 {
     doHeightUpdate = true;
+    doDirectionUpdate = true;
 }
 
-void mqttDoAttributeUpdate()
+void mqttSetLastError(String lastError)
 {
-    doAttributeUpdate = true;
-}
-
-void mqttSetLastError(String _lastError)
-{
-    lastError = _lastError;
-    doAttributeUpdate = true;
+    if (TAKE_ATTRIBUTE_SEMAPHORE()) {
+        deskControlDevice.setAttribute("last_error", lastError);
+        GIVE_ATTRIBUTE_SEMAPHORE();
+    }
     SERIAL_PORT.println("ERROR: " + lastError);
 }
 
-void mqttSetStopReason(String _stopReason)
+void mqttSetStopReason(String stopReason)
 {
-    stopReason = _stopReason;
-    doAttributeUpdate = true;
+    if (TAKE_ATTRIBUTE_SEMAPHORE()) {
+        deskControlDevice.setAttribute("stop_reason", stopReason);
+        GIVE_ATTRIBUTE_SEMAPHORE();
+    }
 }
 
 void mqttSetDebug(String debugMsg)
@@ -79,12 +86,10 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
     {
         if (strcmp(str, "online") == 0)
         {
-            doConfigUpdate = true;
-            doAttributeUpdate = true;
-            doHeightUpdate = true;
+            mqttFullRefresh();
         }
     }
-    else if (strcmp(topic, deskControlDevice.getCommandTopic().c_str()) == 0)
+    else if (strcmp(topic, deskControlDevice.makeMQTTCommandTopic().c_str()) == 0)
     {
         const int num = atoi(str);
         if (num > 0)
@@ -92,7 +97,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
             deskAdjustHeight(num);
         }
     }
-    else if (strcmp(topic, deskStopDevice.getCommandTopic().c_str()) == 0)
+    else if (strcmp(topic, deskStopDevice.makeMQTTCommandTopic().c_str()) == 0)
     {
         deskStop();
     }
@@ -115,7 +120,7 @@ bool mqttEnsureConnected()
         return false;
     }
 
-    mqttClient.setBufferSize(4096);
+    mqttClient.setBufferSize(HA_JSON_MAX_SIZE);
     mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
     mqttClient.setCallback(mqttCallback);
 
@@ -128,14 +133,12 @@ bool mqttEnsureConnected()
         return false;
     }
 
-    mqttClient.subscribe(deskControlDevice.getCommandTopic().c_str());
-    mqttClient.subscribe(deskStopDevice.getCommandTopic().c_str());
+    mqttClient.subscribe(deskControlDevice.makeMQTTCommandTopic().c_str());
+    mqttClient.subscribe(deskStopDevice.makeMQTTCommandTopic().c_str());
     mqttClient.subscribe(HA_STATUS_TOPIC);
 
     SERIAL_PORT.println("MQTT connected");
-    doConfigUpdate = true;
-    doAttributeUpdate = true;
-    doHeightUpdate = true;
+    mqttFullRefresh();
 
     return true;
 }
@@ -144,60 +147,57 @@ static void mqttLoopTask(void *parameter)
 {
     while (1)
     {
+        delay(10);
         if (mqttEnsureConnected())
         {
             mqttClient.loop();
 
             const unsigned long now = millis();
 
-            if (now - lastHeightUpdateTime > AUTO_HEIGHT_PERIOD)
-            {
-                doHeightUpdate = true;
-            }
-
-            if (doConfigUpdate)
-            {
-                mqttClient.publish(deskControlDevice.getConfigTopic().c_str(), deskControlDevice.getConfigPayload().c_str());
-                mqttClient.publish(deskStateDevice.getConfigTopic().c_str(), deskStateDevice.getConfigPayload().c_str());
-                mqttClient.publish(deskStopDevice.getConfigTopic().c_str(), deskStopDevice.getConfigPayload().c_str());
-                doConfigUpdate = false;
-            }
-            if (doAttributeUpdate)
-            {
-                deskControlDevice.addAttribute("last_error", lastError);
-                deskControlDevice.addAttribute("stop_reason", stopReason);
-                mqttClient.publish(deskControlDevice.getAttributesTopic().c_str(), deskControlDevice.getAttributesPayload().c_str());
-                deskControlDevice.clearAttributes();
-                deskStateDevice.addAttribute("direction", String(deskGetMovingDirection()));
-                mqttClient.publish(deskStateDevice.getAttributesTopic().c_str(), deskStateDevice.getAttributesPayload().c_str());
-                deskStateDevice.clearAttributes();
-                doAttributeUpdate = false;
-            }
-            if (doHeightUpdate)
+            if (doHeightUpdate || now - lastHeightUpdateTime > AUTO_HEIGHT_PERIOD)
             {
                 rangingAcquireBit(RANGING_BIT_MQTT);
                 const ranging_result_t result = rangingWaitForAnyResult();
                 if (result.valid)
                 {
-                    mqttClient.publish(deskStateDevice.getStateTopic().c_str(), String(result.value).c_str());
+                    deskStateDevice.setState(String(result.value));
                 }
                 rangingReleaseBit(RANGING_BIT_MQTT);
                 doHeightUpdate = false;
                 lastHeightUpdateTime = now;
             }
+
+            if (TAKE_ATTRIBUTE_SEMAPHORE()) {
+                if (doDirectionUpdate)
+                {
+                    const int8_t currentMovingDirection = deskGetMovingDirection();
+                    if (currentMovingDirection != lastMovingDirection) {
+                        deskStateDevice.setAttribute("direction", currentMovingDirection);
+                        lastMovingDirection = currentMovingDirection;
+                    }
+                    doDirectionUpdate = false;
+                }
+
+                deskControlDevice.loop(mqttClient);
+                deskStateDevice.loop(mqttClient);
+                deskStopDevice.loop(mqttClient);
+                GIVE_ATTRIBUTE_SEMAPHORE();
+            }
         }
-        delay(10);
     }
 }
 
 void mqttSetup()
 {
     lastHeightUpdateTime = millis();
-    deskControlDevice.enableAttributesTopic();
-    deskStateDevice.enableAttributesTopic();
-    deskControlDevice.addConfigVar("max", STRINGIFY(DESK_HEIGHT_MAX));
-    deskControlDevice.addConfigVar("min", STRINGIFY(DESK_HEIGHT_MIN));
-    deskControlDevice.addConfigVar("step", "1");
+    attributeSetMutex = xSemaphoreCreateMutex();
+
+    deskControlDevice.setConfig("max", DESK_HEIGHT_MAX);
+    deskControlDevice.setConfig("min", DESK_HEIGHT_MIN);
+    deskControlDevice.setConfig("step", 1);
+    deskControlDevice.setConfig("unit_of_measurement", "mm");
+    deskStateDevice.setConfig("unit_of_measurement", "mm");
+    mqttFullRefresh();
     mqttEnsureConnected();
     CREATE_TASK_IO(mqttLoopTask, "mqttLoop", 10, NULL);
 }

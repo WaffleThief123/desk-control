@@ -25,7 +25,6 @@ static void deskStopInternal()
     deskMovingDirection = 0;
     digitalWrite(PIN_RELAY_UP, LOW);
     digitalWrite(PIN_RELAY_DOWN, LOW);
-    mqttDoAttributeUpdate();
     mqttDoHeightUpdate();
 }
 
@@ -216,7 +215,6 @@ void deskAdjustHeight(int16_t _target)
     }
 
     deskMovingDirection = (target > startDistance) ? 1 : -1;
-    mqttDoAttributeUpdate();
     mqttDoHeightUpdate();
 
     deskSpeed = 0;

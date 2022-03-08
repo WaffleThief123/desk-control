@@ -104,11 +104,27 @@ static void rangingTask(void *parameter)
     }
 }
 
+static void rangingInitTask(void *parameter)
+{
+    rangingAcquireBit(RANGING_BIT_INIT);
+    rangingWaitForNextResult(1000);
+    rangingWaitForNextResult(1000);
+    rangingWaitForNextResult(1000);
+    rangingWaitForNextResult(1000);
+    rangingWaitForNextResult(1000);
+    rangingReleaseBit(RANGING_BIT_INIT);
+
+    mqttDoHeightUpdate();
+
+    vTaskDelete(NULL);
+}
+
 void rangingSetup()
 {
     lastValue.valid = false;
     INVALID_VALUE.valid = false;
     CREATE_TASK(rangingTask, "ranging", 50, &rangingTaskHandle);
+    CREATE_TASK(rangingInitTask, "rangingInit", 10, NULL);
 }
 
 static bool rangingChecks()

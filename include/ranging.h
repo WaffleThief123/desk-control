@@ -7,6 +7,7 @@
 #define RANGING_BIT_DESK_ADJUST 4
 #define RANGING_BIT_MQTT 8
 #define RANGING_BIT_SERIAL 16
+#define RANGING_BIT_INIT 32
 
 typedef struct ranging_result_t {
     uint16_t value;
