@@ -80,8 +80,8 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
         if (strcmp(str, "online") == 0)
         {
             doConfigUpdate = true;
-            doHeightUpdate = true;
             doAttributeUpdate = true;
+            doHeightUpdate = true;
         }
     }
     else if (strcmp(topic, deskControlDevice.getCommandTopic().c_str()) == 0)
@@ -134,8 +134,8 @@ bool mqttEnsureConnected()
 
     SERIAL_PORT.println("MQTT connected");
     doConfigUpdate = true;
-    doHeightUpdate = true;
     doAttributeUpdate = true;
+    doHeightUpdate = true;
 
     return true;
 }
