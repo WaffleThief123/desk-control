@@ -47,6 +47,10 @@ static void rangingSensorInit()
 #ifdef RANGING_ROI_WIDTH
     vl53.SetROI(RANGING_ROI_WIDTH, RANGING_ROI_HEIGHT);
 #endif
+
+#ifdef RANGING_OFFSET
+    vl53.SetOffsetInMm(RANGING_OFFSET);
+#endif
 }
 
 static void rangingTaskInner()

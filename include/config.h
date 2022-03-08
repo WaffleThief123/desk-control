@@ -26,8 +26,8 @@
 #define DESK_SPEED_MIN 10
 #define DESK_SPEED_TRIES 3
 
-#define DESK_HEIGHT_MIN 620
-#define DESK_HEIGHT_MAX 1050
+#define DESK_HEIGHT_MIN 670
+#define DESK_HEIGHT_MAX 1150
 
 /* Table of SPAD locations. Each SPAD has a number which is not obvious.
  *
@@ -56,6 +56,7 @@
 #define RANGING_TIMEOUT 1000
 #define RANGING_MAX_ERROR_REPEATS 20
 #define RANGING_UNUSED_TIMEOUT 2000
+#define RANGING_OFFSET 70
 
 #define WIFI_MQTT_TIMEOUT (1000 * 60 * 15)
 
