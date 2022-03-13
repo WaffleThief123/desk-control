@@ -23,16 +23,16 @@ static unsigned long lastHeightUpdateTime = 0;
 static int8_t lastMovingDirection = -9;
 static SemaphoreHandle_t attributeSetMutex;
 
-static HomeAssistantMQTTDevice deskControlDevice("number", DEVICE_NAME " Control");
-static HomeAssistantMQTTDevice deskStateDevice("sensor", DEVICE_NAME " State");
+static HomeAssistantMQTTDevice deskTargetDevice("number", DEVICE_NAME " Target Height");
+static HomeAssistantMQTTDevice deskCurrentDevice("sensor", DEVICE_NAME " Current Height");
 static HomeAssistantMQTTDevice deskStopDevice("button", DEVICE_NAME " Stop");
 
 static void mqttFullRefresh()
 {
     doHeightUpdate = true;
     doDirectionUpdate = true;
-    deskControlDevice.refresh();
-    deskStateDevice.refresh();
+    deskTargetDevice.refresh();
+    deskCurrentDevice.refresh();
     deskStopDevice.refresh();
 }
 
@@ -45,7 +45,7 @@ void mqttDoHeightUpdate()
 void mqttSetLastError(String lastError)
 {
     if (TAKE_ATTRIBUTE_SEMAPHORE()) {
-        deskControlDevice.setAttribute("last_error", lastError);
+        deskStopDevice.setAttribute("last_error", lastError);
         GIVE_ATTRIBUTE_SEMAPHORE();
     }
     SERIAL_PORT.println("ERROR: " + lastError);
@@ -54,7 +54,7 @@ void mqttSetLastError(String lastError)
 void mqttSetStopReason(String stopReason)
 {
     if (TAKE_ATTRIBUTE_SEMAPHORE()) {
-        deskControlDevice.setAttribute("stop_reason", stopReason);
+        deskStopDevice.setAttribute("stop_reason", stopReason);
         GIVE_ATTRIBUTE_SEMAPHORE();
     }
 }
@@ -89,7 +89,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
             mqttFullRefresh();
         }
     }
-    else if (strcmp(topic, deskControlDevice.getMQTTCommandTopic().c_str()) == 0)
+    else if (strcmp(topic, deskTargetDevice.getMQTTCommandTopic().c_str()) == 0)
     {
         const int num = atoi(str);
         if (num > 0)
@@ -133,7 +133,8 @@ bool mqttEnsureConnected()
         return false;
     }
 
-    mqttClient.subscribe(deskControlDevice.getMQTTCommandTopic().c_str());
+    deskStopDevice.setAttribute("ip", WiFi.localIP().toString());
+    mqttClient.subscribe(deskTargetDevice.getMQTTCommandTopic().c_str());
     mqttClient.subscribe(deskStopDevice.getMQTTCommandTopic().c_str());
     mqttClient.subscribe(HA_STATUS_TOPIC);
 
@@ -160,7 +161,7 @@ static void mqttLoopTask(void *parameter)
                 const ranging_result_t result = rangingWaitForAnyResult();
                 if (result.valid)
                 {
-                    deskStateDevice.setState(String(result.value));
+                    deskCurrentDevice.setState(String(result.value));
                 }
                 rangingReleaseBit(RANGING_BIT_MQTT);
                 doHeightUpdate = false;
@@ -172,14 +173,14 @@ static void mqttLoopTask(void *parameter)
                 {
                     const int8_t currentMovingDirection = deskGetMovingDirection();
                     if (currentMovingDirection != lastMovingDirection) {
-                        deskStateDevice.setAttribute("direction", currentMovingDirection);
+                        deskCurrentDevice.setAttribute("direction", currentMovingDirection);
                         lastMovingDirection = currentMovingDirection;
                     }
                     doDirectionUpdate = false;
                 }
 
-                deskControlDevice.loop(mqttClient);
-                deskStateDevice.loop(mqttClient);
+                deskTargetDevice.loop(mqttClient);
+                deskCurrentDevice.loop(mqttClient);
                 deskStopDevice.loop(mqttClient);
                 GIVE_ATTRIBUTE_SEMAPHORE();
             }
@@ -192,11 +193,11 @@ void mqttSetup()
     lastHeightUpdateTime = millis();
     attributeSetMutex = xSemaphoreCreateMutex();
 
-    deskControlDevice.setConfig("max", DESK_HEIGHT_MAX);
-    deskControlDevice.setConfig("min", DESK_HEIGHT_MIN);
-    deskControlDevice.setConfig("step", 1);
-    deskControlDevice.setConfig("unit_of_measurement", "mm");
-    deskStateDevice.setConfig("unit_of_measurement", "mm");
+    deskTargetDevice.setConfig("max", DESK_HEIGHT_MAX);
+    deskTargetDevice.setConfig("min", DESK_HEIGHT_MIN);
+    deskTargetDevice.setConfig("step", 1);
+    deskTargetDevice.setConfig("unit_of_measurement", "mm");
+    deskCurrentDevice.setConfig("unit_of_measurement", "mm");
     mqttFullRefresh();
     mqttEnsureConnected();
     CREATE_TASK_IO(mqttLoopTask, "mqttLoop", 10, NULL);
