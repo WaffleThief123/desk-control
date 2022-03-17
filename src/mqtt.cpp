@@ -155,7 +155,15 @@ static void mqttLoopTask(void *parameter)
 
             const unsigned long now = millis();
 
-            if (doHeightUpdate || now - lastHeightUpdateTime > AUTO_HEIGHT_PERIOD)
+            if (now - lastHeightUpdateTime > AUTO_HEIGHT_PERIOD)
+            {
+                lastMovingDirection = -9;
+                doHeightUpdate = true;
+                doDirectionUpdate = true;
+                lastHeightUpdateTime = now;
+            }
+
+            if (doHeightUpdate)
             {
                 rangingAcquireBit(RANGING_BIT_MQTT);
                 const ranging_result_t result = rangingWaitForAnyResult();
@@ -165,7 +173,6 @@ static void mqttLoopTask(void *parameter)
                 }
                 rangingReleaseBit(RANGING_BIT_MQTT);
                 doHeightUpdate = false;
-                lastHeightUpdateTime = now;
             }
 
             if (TAKE_ATTRIBUTE_SEMAPHORE()) {
