@@ -19,12 +19,6 @@ static void networkWatchdog(void *parameter)
     {
         delay(1000);
 
-        if (!WiFi.isConnected())
-        {
-            WiFi.reconnect();
-            WiFi.waitForConnectResult();
-        }
-
         static unsigned long lastOkayTime = millis();
         if (WiFi.isConnected() && mqttIsConnected())
         {
@@ -35,12 +29,7 @@ static void networkWatchdog(void *parameter)
         if (millis() - lastOkayTime > WIFI_MQTT_TIMEOUT)
         {
             SERIAL_PORT.println("Network main timeout!");
-
-            if (doRestart(false))
-            {
-                vTaskDelete(NULL);
-                break;
-            }
+            ESP.restart();
         }
     }
 }
@@ -62,6 +51,8 @@ void setup()
     serialSetup();
     SERIAL_PORT.println("Booting...");
 
+    CREATE_TASK_IO(networkWatchdog, "networkWatchdog", 2, NULL);
+
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(WIFI_HOSTNAME);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -80,7 +71,6 @@ void setup()
 
     mqttSetup();
 
-    CREATE_TASK_IO(networkWatchdog, "networkWatchdog", 2, NULL);
     CREATE_TASK_IO(arduinoOTATask, "arduinoOTA", 1, NULL);
 
     SERIAL_PORT.println("Boot complete");

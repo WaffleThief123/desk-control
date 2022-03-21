@@ -11,5 +11,5 @@
 #define CREATE_TASK(FUNC, NAME, PRIO, HANDLE) CREATE_TASK_CORE(FUNC, NAME, PRIO, HANDLE, ARDUINO_CORE)
 #define CREATE_TASK_IO(FUNC, NAME, PRIO, HANDLE) CREATE_TASK_CORE(FUNC, NAME, PRIO, HANDLE, IO_CORE)
 
-bool doRestart(bool force);
+bool doRestart();
 extern bool debugEnabled;

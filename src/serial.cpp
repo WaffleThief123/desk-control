@@ -39,17 +39,7 @@ static void serialHandleCommand()
     }
     else if (serialBuffer.equals("restart"))
     {
-        if (!doRestart(false))
-        {
-            SERIAL_PORT.print("NOT ALLOWED");
-        }
-    }
-    else if (serialBuffer.equals("restart force"))
-    {
-        if (!doRestart(true))
-        {
-            SERIAL_PORT.print("NOT ALLOWED");
-        }
+        ESP.restart();
     }
     else if (serialBuffer.startsWith("adjust "))
     {

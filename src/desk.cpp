@@ -166,6 +166,7 @@ void deskSetup()
     pinMode(PIN_RELAY_UP, OUTPUT);
     pinMode(PIN_RELAY_DOWN, OUTPUT);
     deskStopInternal();
+    esp_register_shutdown_handler(deskStopInternal);
     deskAdjustMutex = xSemaphoreCreateMutex();
 }
 

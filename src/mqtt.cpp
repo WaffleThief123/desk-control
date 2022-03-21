@@ -26,6 +26,7 @@ static SemaphoreHandle_t attributeSetMutex;
 static HomeAssistantMQTTDevice deskTargetDevice("number", DEVICE_NAME " Target Height");
 static HomeAssistantMQTTDevice deskCurrentDevice("sensor", DEVICE_NAME " Current Height");
 static HomeAssistantMQTTDevice deskStopDevice("button", DEVICE_NAME " Stop");
+static HomeAssistantMQTTDevice deskRebootDevice("button", DEVICE_NAME " Reboot");
 
 static void mqttFullRefresh()
 {
@@ -34,6 +35,7 @@ static void mqttFullRefresh()
     deskTargetDevice.refresh();
     deskCurrentDevice.refresh();
     deskStopDevice.refresh();
+    deskRebootDevice.refresh();
 }
 
 void mqttDoHeightUpdate()
@@ -101,6 +103,10 @@ void mqttCallback(char *topic, byte *payload, unsigned int len)
     {
         deskStop();
     }
+    else if (strcmp(topic, deskRebootDevice.getMQTTCommandTopic().c_str()) == 0)
+    {
+        ESP.restart();
+    }
 }
 
 bool mqttIsConnected()
@@ -136,6 +142,7 @@ bool mqttEnsureConnected()
     deskStopDevice.setAttribute("ip", WiFi.localIP().toString());
     mqttClient.subscribe(deskTargetDevice.getMQTTCommandTopic().c_str());
     mqttClient.subscribe(deskStopDevice.getMQTTCommandTopic().c_str());
+    mqttClient.subscribe(deskRebootDevice.getMQTTCommandTopic().c_str());
     mqttClient.subscribe(HA_STATUS_TOPIC);
 
     SERIAL_PORT.println("MQTT connected");
@@ -189,6 +196,7 @@ static void mqttLoopTask(void *parameter)
                 deskTargetDevice.loop(mqttClient);
                 deskCurrentDevice.loop(mqttClient);
                 deskStopDevice.loop(mqttClient);
+                deskRebootDevice.loop(mqttClient);
                 GIVE_ATTRIBUTE_SEMAPHORE();
             }
         }
