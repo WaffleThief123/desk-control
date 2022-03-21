@@ -31,6 +31,7 @@ static void rangingSensorInit()
         mqttSetLastError("VL53L1X_Begin: " + String(status));
         return;
     }
+    SERIAL_PORT.println("VL53L1X initialized");
 
 #ifdef RANGING_DISTANCE_MODE
     vl53.SetDistanceMode(RANGING_DISTANCE_MODE);
@@ -51,6 +52,8 @@ static void rangingSensorInit()
 #ifdef RANGING_OFFSET
     vl53.SetOffsetInMm(RANGING_OFFSET);
 #endif
+
+    SERIAL_PORT.println("VL53L1X configured");
 }
 
 static void rangingTaskInner()
@@ -115,6 +118,8 @@ static void rangingInitTask(void *parameter)
     rangingReleaseBit(RANGING_BIT_INIT);
 
     mqttDoHeightUpdate();
+
+    SERIAL_PORT.println("Ranging init complete!");
 
     vTaskDelete(NULL);
 }
