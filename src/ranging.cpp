@@ -25,6 +25,7 @@ void rangingReleaseBit(uint8_t bit)
 
 static void rangingSensorInit()
 {
+    SERIAL_PORT.println("VL53L1X initializing");
     VL53L1_Error status = vl53.Begin(0x29);
     if (status != VL53L1_ERROR_NONE)
     {

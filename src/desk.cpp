@@ -30,12 +30,14 @@ static void deskStopInternal()
 
 static void deskStopWait()
 {
-    deskStopInternal();
+    deskMovingDirection = 0;
 
     while (moveTaskHandle != NULL || moveStatusTaskHandle != NULL)
     {
         delay(1);
     }
+
+    deskStopInternal();
 }
 
 void deskStop()
@@ -132,6 +134,9 @@ static void deskMoveTask(void *parameter)
         delay(1);
     }
 
+    digitalWrite(PIN_RELAY_UP, HIGH);
+    digitalWrite(PIN_RELAY_DOWN, HIGH);
+    delay(100);
     deskStopInternal();
 
     mqttDoHeightUpdate();
