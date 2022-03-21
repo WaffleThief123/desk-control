@@ -142,6 +142,8 @@ static void deskMoveTask(void *parameter)
     mqttDoHeightUpdate();
     mqttSetStopReason(stopReason);
 
+    delay(100);
+
     rangingReleaseBit(RANGING_BIT_DESK_MOVE);
     moveTaskHandle = NULL;
     vTaskDelete(NULL);
