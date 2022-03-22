@@ -134,6 +134,7 @@ static void deskMoveTask(void *parameter)
         delay(1);
     }
 
+    // discharge motor backEMF through 30V and not GND
     digitalWrite(PIN_RELAY_UP, HIGH);
     digitalWrite(PIN_RELAY_DOWN, HIGH);
     delay(100);
