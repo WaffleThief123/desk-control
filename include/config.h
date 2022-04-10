@@ -2,14 +2,11 @@
 
 #include "config_private.h"
 
-#define PIN_SDA 8
-#define PIN_SCL 9
-
 #define PIN_SDA SDA
 #define PIN_SCL SCL
  
-#define PIN_RELAY_UP 17
-#define PIN_RELAY_DOWN 18
+#define PIN_RELAY_UP 18
+#define PIN_RELAY_DOWN 17
 
 #define SERIAL_PORT Serial
 
@@ -52,6 +49,7 @@
 #define RANGING_TIMING_BUDGET 100
 #define RANGING_TIMEOUT 1000
 #define RANGING_MAX_ERROR_REPEATS 10
+#define RANGING_OFFSET 70
 
 #define WIFI_MQTT_TIMEOUT (1000 * 60 * 15)
 

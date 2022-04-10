@@ -93,7 +93,8 @@ static void rangingTaskInner()
 
 static void rangingTask(void *parameter)
 {
-    Wire.begin(PIN_SDA, PIN_SCL);
+    Wire.setPins(PIN_SDA, PIN_SCL);
+    Wire.begin();
     rangingSensorInit();
 
     while (1)

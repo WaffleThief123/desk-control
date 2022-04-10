@@ -4,7 +4,7 @@
 #include "util.h"
 #include "desk.h"
 
-bool debugEnabled = false;
+bool debugEnabled = true;
 
 bool doRestart()
 {
