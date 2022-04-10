@@ -6,13 +6,8 @@
 #define PIN_SDA SDA
 #define PIN_SCL SCL
  
-#define PIN_RELAY_UP 12
-#define PIN_RELAY_DOWN 13
-#define PIN_LED_DATA 27
- 
-#define PIN_ARROW_UP A0
-#define PIN_ARROW_DOWN A1
-#define PIN_BUTTON A2
+#define PIN_RELAY_UP A1
+#define PIN_RELAY_DOWN A0
 
 #define SERIAL_PORT Serial
 

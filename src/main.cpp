@@ -4,7 +4,6 @@
 #include "config.h"
 #include "ranging.h"
 #include "desk.h"
-#include "buttons.h"
 #include "serial.h"
 #include "mqtt.h"
 #include "util.h"
@@ -46,7 +45,6 @@ static void arduinoOTATask(void *parameter)
 void setup()
 {
     deskSetup();
-    buttonsSetup();
 
     serialSetup();
     SERIAL_PORT.println("Booting...");

@@ -20,11 +20,18 @@ static double deskSpeed;
 static unsigned long rangingLastTime;
 static SemaphoreHandle_t deskAdjustMutex;
 
+#define DESK_UP_LEDC 0
+#define DESK_DOWN_LEDC 1
+#define DESK_LEDC_FREQ 5000
+#define DESK_LEDC_RES 8 
+#define DESK_LEDC_MIN ((1 << DESK_LEDC_RES) - 1)
+#define DESK_LEDC_MAX 0
+
 static void deskStopInternal()
 {
     deskMovingDirection = 0;
-    digitalWrite(PIN_RELAY_UP, LOW);
-    digitalWrite(PIN_RELAY_DOWN, LOW);
+    ledcWrite(DESK_UP_LEDC, DESK_LEDC_MIN);
+    ledcWrite(DESK_DOWN_LEDC, DESK_LEDC_MIN);
     mqttDoHeightUpdate();
 }
 
@@ -57,13 +64,13 @@ static void deskMoveTask(void *parameter)
 
     if (deskMovingDirection > 0)
     {
-        digitalWrite(PIN_RELAY_DOWN, LOW);
-        digitalWrite(PIN_RELAY_UP, HIGH);
+        ledcWrite(DESK_DOWN_LEDC, DESK_LEDC_MIN);
+        ledcWrite(DESK_UP_LEDC, DESK_LEDC_MAX);
     }
     else
     {
-        digitalWrite(PIN_RELAY_UP, LOW);
-        digitalWrite(PIN_RELAY_DOWN, HIGH);
+        ledcWrite(DESK_UP_LEDC, DESK_LEDC_MIN);
+        ledcWrite(DESK_DOWN_LEDC, DESK_LEDC_MAX);
     }
 
     while (deskMovingDirection)
@@ -134,10 +141,6 @@ static void deskMoveTask(void *parameter)
         delay(1);
     }
 
-    // discharge motor backEMF through 30V and not GND
-    digitalWrite(PIN_RELAY_UP, HIGH);
-    digitalWrite(PIN_RELAY_DOWN, HIGH);
-    delay(100);
     deskStopInternal();
 
     mqttDoHeightUpdate();
@@ -171,9 +174,14 @@ static void deskMoveStatusTask(void *parameter)
 
 void deskSetup()
 {
-    pinMode(PIN_RELAY_UP, OUTPUT);
-    pinMode(PIN_RELAY_DOWN, OUTPUT);
+    ledcSetup(DESK_UP_LEDC, DESK_LEDC_FREQ, DESK_LEDC_RES);
+    ledcSetup(DESK_DOWN_LEDC, DESK_LEDC_FREQ, DESK_LEDC_RES);
     deskStopInternal();
+    ledcAttachPin(PIN_RELAY_UP, DESK_UP_LEDC);
+    ledcAttachPin(PIN_RELAY_DOWN, DESK_DOWN_LEDC);
+    deskStopInternal();
+    pinMode(PIN_RELAY_UP, OUTPUT_OPEN_DRAIN);
+    pinMode(PIN_RELAY_DOWN, OUTPUT_OPEN_DRAIN);
     esp_register_shutdown_handler(deskStopInternal);
     deskAdjustMutex = xSemaphoreCreateMutex();
 }
