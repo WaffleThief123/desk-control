@@ -146,8 +146,6 @@ static void deskMoveTask(void *parameter)
 
         if (setDeskSpeed != deskSpeed)
         {
-            mqttSetDebug("DESK SPEED " + String(deskSpeed));
-            mqttSetDebug("DESK SPEED2 " + String(DESK_LEDC_MIN - deskSpeed));
             if (deskMovingDirection > 0)
             {
                 ledcWrite(DESK_UP_LEDC, DESK_LEDC_MIN - deskSpeed);
