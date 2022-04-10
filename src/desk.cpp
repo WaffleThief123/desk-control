@@ -69,7 +69,6 @@ static void deskMoveTask(void *parameter)
 
     ledcWrite(DESK_DOWN_LEDC, DESK_LEDC_MIN);
     ledcWrite(DESK_UP_LEDC, DESK_LEDC_MIN);
-    delay(10);
 
     uint32_t setDeskSpeed = 0;
 
