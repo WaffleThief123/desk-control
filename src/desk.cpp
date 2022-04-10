@@ -22,10 +22,14 @@ static SemaphoreHandle_t deskAdjustMutex;
 
 #define DESK_UP_LEDC 0
 #define DESK_DOWN_LEDC 1
-#define DESK_LEDC_FREQ 5000
+#define DESK_LEDC_FREQ 30000
 #define DESK_LEDC_RES 8
 #define DESK_LEDC_MIN ((1 << DESK_LEDC_RES) - 1)
 #define DESK_LEDC_MAX 0
+
+#define DESK_SPEED_FULL 255
+#define DESK_SPEED_SLOW 200
+#define DESK_SPEED_STOP 0
 
 static void deskStopInternal()
 {
@@ -63,18 +67,11 @@ static void deskMoveTask(void *parameter)
     rangingAcquireBit(RANGING_BIT_DESK_MOVE);
     String stopReason = "STOPPED";
 
-    if (deskMovingDirection > 0)
-    {
-        mqttSetDebug("DESK UP ON");
-        ledcWrite(DESK_DOWN_LEDC, DESK_LEDC_MIN);
-        ledcWrite(DESK_UP_LEDC, DESK_LEDC_MAX);
-    }
-    else
-    {
-        mqttSetDebug("DESK DOWN ON");
-        ledcWrite(DESK_UP_LEDC, DESK_LEDC_MIN);
-        ledcWrite(DESK_DOWN_LEDC, DESK_LEDC_MAX);
-    }
+    ledcWrite(DESK_DOWN_LEDC, DESK_LEDC_MIN);
+    ledcWrite(DESK_UP_LEDC, DESK_LEDC_MIN);
+    delay(10);
+
+    uint32_t setDeskSpeed = 0;
 
     while (deskMovingDirection)
     {
@@ -139,6 +136,27 @@ static void deskMoveTask(void *parameter)
             {
                 failedSpeedTries = 0;
             }
+        }
+
+        uint32_t deskSpeed = DESK_SPEED_FULL;
+        if (heightDiff <= DESK_LOW_SPEED_THRESHOLD)
+        {
+            deskSpeed = DESK_SPEED_SLOW;
+        }
+
+        if (setDeskSpeed != deskSpeed)
+        {
+            mqttSetDebug("DESK SPEED " + String(deskSpeed));
+            mqttSetDebug("DESK SPEED2 " + String(DESK_LEDC_MIN - deskSpeed));
+            if (deskMovingDirection > 0)
+            {
+                ledcWrite(DESK_UP_LEDC, DESK_LEDC_MIN - deskSpeed);
+            }
+            else
+            {
+                ledcWrite(DESK_DOWN_LEDC, DESK_LEDC_MIN - deskSpeed);
+            }
+            setDeskSpeed = deskSpeed;
         }
 
         delay(1);
