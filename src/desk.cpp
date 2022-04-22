@@ -7,7 +7,6 @@
 #include "mqtt.h"
 #include "util.h"
 
-static unsigned long timeout;
 static unsigned long startTime;
 static int failedSpeedTries;
 static int16_t speedLastDistance;
@@ -27,9 +26,7 @@ static SemaphoreHandle_t deskAdjustMutex;
 #define DESK_LEDC_MIN ((1 << DESK_LEDC_RES) - 1)
 #define DESK_LEDC_MAX 0
 
-#define DESK_SPEED_FULL 255
-#define DESK_SPEED_SLOW 200
-#define DESK_SPEED_STOP 0
+#define DESK_DECREASE_PER_MM ((DESK_SPEED_FULL - DESK_SPEED_SLOW) / (DESK_SLOWDOWN_START - DESK_SLOWDOWN_END))
 
 static void deskStopInternal()
 {
@@ -70,16 +67,10 @@ static void deskMoveTask(void *parameter)
     ledcWrite(DESK_DOWN_LEDC, DESK_LEDC_MIN);
     ledcWrite(DESK_UP_LEDC, DESK_LEDC_MIN);
 
-    uint32_t setDeskSpeed = 0;
+    uint32_t setDeskSpeed = UINT32_MAX;
 
     while (deskMovingDirection)
     {
-        if (millis() - startTime > timeout)
-        {
-            stopReason = "MAIN TIMEOUT";
-            break;
-        }
-
         const ranging_result_t rangingResult = rangingWaitForNewResult(rangingLastTime, DESK_RANGING_TIMEOUT);
         if (!rangingResult.valid)
         {
@@ -138,20 +129,26 @@ static void deskMoveTask(void *parameter)
         }
 
         uint32_t deskSpeed = DESK_SPEED_FULL;
-        if (heightDiff <= DESK_LOW_SPEED_THRESHOLD)
+        if (heightDiff <= DESK_SLOWDOWN_END)
         {
             deskSpeed = DESK_SPEED_SLOW;
         }
+        else if (heightDiff <= DESK_SLOWDOWN_START)
+        {
+            deskSpeed = DESK_SPEED_SLOW + (DESK_DECREASE_PER_MM * (heightDiff - DESK_SLOWDOWN_END));
+        }
+
+        deskSpeed = DESK_LEDC_MIN - deskSpeed;
 
         if (setDeskSpeed != deskSpeed)
         {
             if (deskMovingDirection > 0)
             {
-                ledcWrite(DESK_UP_LEDC, DESK_LEDC_MIN - deskSpeed);
+                ledcWrite(DESK_UP_LEDC, deskSpeed);
             }
             else
             {
-                ledcWrite(DESK_DOWN_LEDC, DESK_LEDC_MIN - deskSpeed);
+                ledcWrite(DESK_DOWN_LEDC, deskSpeed);
             }
             setDeskSpeed = deskSpeed;
         }
@@ -241,8 +238,6 @@ void deskAdjustHeight(int16_t _target)
 
     startTime = rangingResult.time;
     const int16_t startDistance = rangingResult.value;
-
-    timeout = abs(target - startDistance) * DESK_ADJUST_TIMEOUT_PER_MM;
 
     if (abs(target - startDistance) < DESK_HEIGHT_TOLERANCE)
     {

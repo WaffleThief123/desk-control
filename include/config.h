@@ -5,24 +5,28 @@
 #define PIN_SDA SDA
 #define PIN_SCL SCL
  
-#define PIN_RELAY_UP 18
-#define PIN_RELAY_DOWN 17
+#define PIN_RELAY_UP 17
+#define PIN_RELAY_DOWN 18
 
 #define SERIAL_PORT Serial
 
 // In mm
 #define DESK_HEIGHT_TOLERANCE 2
-#define DESK_FINE_ADJUST_RANGE 20
-#define DESK_ADJUST_TIMEOUT_PER_MM 75
 #define DESK_RANGING_TIMEOUT 1000
-#define DESK_LOW_SPEED_THRESHOLD 20
 
-#define DESK_CALCULATE_SPEED_TIME 1000
-#define DESK_SPEED_MIN 10
+#define DESK_CALCULATE_SPEED_TIME 3000
+#define DESK_SPEED_MIN 1
 #define DESK_SPEED_TRIES 3
 
 #define DESK_HEIGHT_MIN 670
 #define DESK_HEIGHT_MAX 1150
+
+#define DESK_SLOWDOWN_START 80
+#define DESK_SLOWDOWN_END 5
+
+#define DESK_SPEED_FULL 255
+#define DESK_SPEED_SLOW 176
+#define DESK_SPEED_STOP 0
 
 /* Table of SPAD locations. Each SPAD has a number which is not obvious.
  *
