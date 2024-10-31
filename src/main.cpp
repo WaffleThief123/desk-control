@@ -7,6 +7,7 @@
 #include "serial.h"
 #include "mqtt.h"
 #include "util.h"
+#include <WiFi.h>
 
 static void networkWatchdog(void *parameter)
 {
