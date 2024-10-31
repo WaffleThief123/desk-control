@@ -19,8 +19,8 @@ static double deskSpeed;
 static unsigned long rangingLastTime;
 static SemaphoreHandle_t deskAdjustMutex;
 
-#define DESK_UP_LEDC 0
-#define DESK_DOWN_LEDC 1
+// #define DESK_UP_LEDC 0
+// #define DESK_DOWN_LEDC 1
 #define DESK_LEDC_FREQ 30000
 #define DESK_LEDC_RES 8
 #define DESK_LEDC_MIN ((1 << DESK_LEDC_RES) - 1)
@@ -31,8 +31,8 @@ static SemaphoreHandle_t deskAdjustMutex;
 static void deskStopInternal()
 {
     deskMovingDirection = 0;
-    ledcWrite(DESK_UP_LEDC, DESK_LEDC_MIN);
-    ledcWrite(DESK_DOWN_LEDC, DESK_LEDC_MIN);
+    ledcWrite(PIN_RELAY_UP, DESK_LEDC_MIN);
+    ledcWrite(PIN_RELAY_DOWN, DESK_LEDC_MIN);
     mqttSetDebug("DESK OFF");
     mqttDoHeightUpdate();
 }
@@ -64,8 +64,8 @@ static void deskMoveTask(void *parameter)
     rangingAcquireBit(RANGING_BIT_DESK_MOVE);
     String stopReason = "STOPPED";
 
-    ledcWrite(DESK_DOWN_LEDC, DESK_LEDC_MIN);
-    ledcWrite(DESK_UP_LEDC, DESK_LEDC_MIN);
+    ledcWrite(PIN_RELAY_DOWN, DESK_LEDC_MIN);
+    ledcWrite(PIN_RELAY_UP, DESK_LEDC_MIN);
 
     uint32_t setDeskSpeed = UINT32_MAX;
 
@@ -144,11 +144,11 @@ static void deskMoveTask(void *parameter)
         {
             if (deskMovingDirection > 0)
             {
-                ledcWrite(DESK_UP_LEDC, deskSpeed);
+                ledcWrite(PIN_RELAY_UP, deskSpeed);
             }
             else
             {
-                ledcWrite(DESK_DOWN_LEDC, deskSpeed);
+                ledcWrite(PIN_RELAY_DOWN, deskSpeed);
             }
             setDeskSpeed = deskSpeed;
         }
@@ -194,10 +194,8 @@ void deskSetup()
     digitalWrite(PIN_RELAY_UP, HIGH);
     digitalWrite(PIN_RELAY_DOWN, HIGH);
 
-    ledcSetup(DESK_UP_LEDC, DESK_LEDC_FREQ, DESK_LEDC_RES);
-    ledcSetup(DESK_DOWN_LEDC, DESK_LEDC_FREQ, DESK_LEDC_RES);
-    ledcAttachPin(PIN_RELAY_UP, DESK_UP_LEDC);
-    ledcAttachPin(PIN_RELAY_DOWN, DESK_DOWN_LEDC);
+    ledcAttach(PIN_RELAY_UP, DESK_LEDC_FREQ, DESK_LEDC_RES);
+    ledcAttach(PIN_RELAY_DOWN, DESK_LEDC_FREQ, DESK_LEDC_RES);
 
     deskStopInternal();
     esp_register_shutdown_handler(deskStopInternal);

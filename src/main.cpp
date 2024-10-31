@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <ArduinoOTA.h>
+// #include <ArduinoOTA.h>
 
 #include "config.h"
 #include "ranging.h"
@@ -30,14 +30,15 @@ static void networkWatchdog(void *parameter)
     }
 }
 
-static void arduinoOTATask(void *parameter)
+/*static void arduinoOTATask(void *parameter)
 {
     while (1)
     {
         ArduinoOTA.handle();
         delay(100);
     }
-}
+}*/
+
 
 void setup()
 {
@@ -48,6 +49,7 @@ void setup()
 
     CREATE_TASK_IO(networkWatchdog, "networkWatchdog", 2, NULL);
 
+
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(WIFI_HOSTNAME);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -56,17 +58,17 @@ void setup()
 
     SERIAL_PORT.println("WiFi initialized");
 
-    ArduinoOTA.setHostname(WIFI_HOSTNAME);
-    ArduinoOTA.setPassword(OTA_PASSWORD);
-    ArduinoOTA.begin();
+    // ArduinoOTA.setHostname(WIFI_HOSTNAME);
+    // ArduinoOTA.setPassword(OTA_PASSWORD);
+    // ArduinoOTA.begin();
 
-    SERIAL_PORT.println("OTA initialized");
+    // SERIAL_PORT.println("OTA initialized");
 
     rangingSetup();
 
     mqttSetup();
 
-    CREATE_TASK_IO(arduinoOTATask, "arduinoOTA", 1, NULL);
+    // CREATE_TASK_IO(arduinoOTATask, "arduinoOTA", 1, NULL);
 
     SERIAL_PORT.println("Boot complete");
 }
