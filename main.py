@@ -42,7 +42,7 @@ def handle_cmd(cmd):
         value = int(split_cmd[1])
 
         if cmd == 'move_smooth':
-            motor.move_gaussian(value)
+            motor.move_to_height(value)
 
         if cmd == 'move_pid':
             motor.move_pid(value)

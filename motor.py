@@ -1,7 +1,5 @@
 import machine
 import time
-import math
-
 from sensor import VL53L1XReader
 
 
@@ -31,35 +29,13 @@ class DeskMotor:
         self.stop()
 
     def __max_height(self):
-        """
-        Minimum height in millimetres.
-        :return:
-        """
-        return 685
+        return 1100  # mm
 
     def __min_height(self):
-        """
-        Maximum height in millimetres.
-        :return:
-        """
-        return 1100
+        return 685  # mm
 
-    def __gaussian_steps(self):
-        return 30
-
-    def __gaussian_timeframe(self):
-        """
-        Timeframe of a gaussian curve that should be used to reach a target
-        :return:
-        """
-        return 3000
-
-    def __gaussian_acceptable_delta(self):
-        """
-        Amount of millimetres that should be considered as an acceptable delta to a desired height.
-        :return:
-        """
-        return 10
+    def __acceptable_delta(self):
+        return 10  # mm tolerance
 
     def stop(self):
         self.relay_a.off()
@@ -75,44 +51,36 @@ class DeskMotor:
         time.sleep(0.01)
         self.relay_b.on()
 
-    def move_gaussian(self, desired_height_in_mm):
-        # Configuration
-        total_time = self.__gaussian_timeframe() / 1000  # convert to seconds
-        steps = self.__gaussian_steps()
-        dt = total_time / steps
-        mu = total_time / 2
-        sigma = 0.5
+    def move_to_height(self, target_height_mm):
+        acceptable_delta = self.__acceptable_delta()
 
         current_height = self.sensor_reader_class.read_distance()
-        delta = desired_height_in_mm - current_height
+        if abs(target_height_mm - current_height) < acceptable_delta:
+            print("Already at desired height.")
+            return
 
-        if abs(delta) < 5:
-            return  # already close enough
+        direction = 1 if target_height_mm > current_height else -1
+        move = self.move_up if direction > 0 else self.move_down
 
-        direction = 1 if delta > 0 else -1
-        move = self.move_up if direction == 1 else self.move_down
-
-        # Precompute Gaussian velocity profile
-        gaussian_values = []
-        for step in range(steps):
-            t = step * dt
-            v = math.exp(-((t - mu) ** 2) / (2 * sigma ** 2))
-            gaussian_values.append(v)
-
-        max_v = max(gaussian_values)
-        normalized = [v / max_v for v in gaussian_values]  # normalize to [0,1]
-
-        # Start motor in correct direction
+        print("🔧 Starting fixed-speed move", "up" if direction > 0 else "down")
         move()
 
-        for i in range(steps):
-            # Use value to control how long motor runs during this step
-            pulse_time = dt * normalized[i]
-            time.sleep(pulse_time)
-            self.stop()
-            # sleep the rest of dt to maintain step timing
-            time.sleep(dt - pulse_time)
-            move()
+        timeout_s = 15
+        start_time = time.time()
+
+        while True:
+            current_height = self.sensor_reader_class.read_distance()
+            delta = target_height_mm - current_height
+
+            if abs(delta) <= acceptable_delta:
+                print("✅ Reached target height.")
+                break
+
+            if time.time() - start_time > timeout_s:
+                print("⏱️ Timed out trying to reach height.")
+                break
+
+            time.sleep(0.1)
 
         self.stop()
 
