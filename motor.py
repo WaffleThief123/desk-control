@@ -92,6 +92,15 @@ class DeskMotor:
 
         scale = min(max(abs(error) / 200, 0.5), 2.0)
         return PID(base_kp * scale, base_ki * scale, base_kd * scale)
+    def __set_direction(self, direction: str):
+        """Set motor direction without delay"""
+        if direction == "up":
+            self.relay_b.off()
+            self.relay_a.on()
+        elif direction == "down":
+            self.relay_a.off()
+        else:
+            self.stop()
 
     def move_pid(self, desired_height_in_mm, timeout_ms=3000):
         sample_time = 0.1  # seconds
