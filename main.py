@@ -1,12 +1,12 @@
 import uasyncio as asyncio
 from mqtt import handle_mqtt, publish_height
 from motor import DeskMotor
-from sensor_reader import VL53L1XReader
+from sensor import VL53L1XReader
 import sys
 import select
 
 sensor_reader = VL53L1XReader()
-motor = DeskMotor(sensor_class=sensor_reader)
+motor = DeskMotor(sensor_reader_class=sensor_reader)
 
 
 async def read_serial():
@@ -41,7 +41,7 @@ def handle_cmd(cmd):
         cmd = split_cmd[0]
         value = int(split_cmd[1])
 
-        if cmd == 'adjust_gaussian':
+        if cmd == 'move_smooth':
             motor.move_gaussian(value)
 
 
