@@ -44,6 +44,9 @@ def handle_cmd(cmd):
         if cmd == 'move_smooth':
             motor.move_gaussian(value)
 
+        if cmd == 'move_pid':
+            motor.move_pid(value)
+
 
 async def periodic_publish():
     while True:

@@ -5,6 +5,24 @@ import math
 from sensor import VL53L1XReader
 
 
+class PID:
+    def __init__(self, kp, ki, kd, integral_limit=5000):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.integral = 0
+        self.prev_error = 0
+        self.integral_limit = integral_limit
+
+    def compute(self, error, dt):
+        self.integral += error * dt
+        self.integral = max(min(self.integral, self.integral_limit), -self.integral_limit)  # anti-windup
+        derivative = (error - self.prev_error) / dt if dt > 0 else 0
+        self.prev_error = error
+        output = self.kp * error + self.ki * self.integral + self.kd * derivative
+        return output
+
+
 class DeskMotor:
     def __init__(self, sensor_reader_class: VL53L1XReader):
         self.sensor_reader_class = sensor_reader_class
@@ -95,5 +113,58 @@ class DeskMotor:
             # sleep the rest of dt to maintain step timing
             time.sleep(dt - pulse_time)
             move()
+
+        self.stop()
+
+    def __estimate_gains(self, error):
+        # Self-tuning based on initial error
+        base_kp = 0.02
+        base_ki = 0.001
+        base_kd = 0.01
+
+        scale = min(max(abs(error) / 200, 0.5), 2.0)
+        return PID(base_kp * scale, base_ki * scale, base_kd * scale)
+
+    def move_pid(self, desired_height_in_mm, timeout_ms=3000):
+        sample_time = 0.1  # seconds
+        max_time = timeout_ms / 1000
+        t_start = time.ticks_ms()
+
+        current_height = self.sensor_reader_class.read_distance()
+        error = desired_height_in_mm - current_height
+        pid = self.__estimate_gains(error)
+
+        last_time = time.ticks_ms()
+        last_direction = None
+
+        while abs(error) > 3:
+            now = time.ticks_ms()
+            dt = (time.ticks_diff(now, last_time)) / 1000.0
+            last_time = now
+
+            current_height = self.sensor_reader_class.read_distance()
+            error = desired_height_in_mm - current_height
+            control = pid.compute(error, dt)
+
+            # Determine relay direction
+            if control > 0:
+                direction = "up"
+            elif control < 0:
+                direction = "down"
+            else:
+                direction = None
+
+            # Change direction only if needed
+            if direction != last_direction:
+                self.stop()
+                if direction:
+                    self.__set_direction(direction)
+                last_direction = direction
+
+            # End condition
+            if time.ticks_diff(now, t_start) > timeout_ms:
+                break
+
+            time.sleep(sample_time)
 
         self.stop()
