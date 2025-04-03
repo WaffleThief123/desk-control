@@ -17,14 +17,14 @@ class DeskMotor:
         Minimum height in millimetres.
         :return:
         """
-        return 670
+        return 685
 
     def __min_height(self):
         """
         Maximum height in millimetres.
         :return:
         """
-        return 1150
+        return 1100
 
     def __gaussian_steps(self):
         return 30
