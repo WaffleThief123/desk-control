@@ -59,7 +59,7 @@ class DeskMotor:
 
     def move_gaussian(self, desired_height_in_mm):
         # Configuration
-        total_time = self.__gaussian_timeframe() / 1000
+        total_time = self.__gaussian_timeframe() / 1000  # convert to seconds
         steps = self.__gaussian_steps()
         dt = total_time / steps
         mu = total_time / 2
@@ -74,26 +74,26 @@ class DeskMotor:
         direction = 1 if delta > 0 else -1
         move = self.move_up if direction == 1 else self.move_down
 
-        # Normalize Gaussian curve to cumulative sum
-        gaussian_cdf = []
+        # Precompute Gaussian velocity profile
+        gaussian_values = []
         for step in range(steps):
             t = step * dt
-            velocity = math.exp(-((t - mu) ** 2) / (2 * sigma ** 2))
-            gaussian_cdf.append(velocity)
-        total_area = sum(gaussian_cdf)
-        normalized_cdf = [sum(gaussian_cdf[:i + 1]) / total_area for i in range(steps)]
+            v = math.exp(-((t - mu) ** 2) / (2 * sigma ** 2))
+            gaussian_values.append(v)
 
-        # Perform stepwise movement
+        max_v = max(gaussian_values)
+        normalized = [v / max_v for v in gaussian_values]  # normalize to [0,1]
+
+        # Start motor in correct direction
+        move()
+
         for i in range(steps):
-            target_height = current_height + normalized_cdf[i] * delta
-            current_position = self.sensor_reader_class.read_distance()
-            if direction == 1 and current_position >= target_height:
-                self.stop()
-            elif direction == -1 and current_position <= target_height:
-                self.stop()
-            else:
-                move()
-            time.sleep(dt)
-            self.stop()  # Stop after each pulse for control
+            # Use value to control how long motor runs during this step
+            pulse_time = dt * normalized[i]
+            time.sleep(pulse_time)
+            self.stop()
+            # sleep the rest of dt to maintain step timing
+            time.sleep(dt - pulse_time)
+            move()
 
         self.stop()
