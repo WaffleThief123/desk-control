@@ -2,7 +2,7 @@ import network
 import time
 import mqtt
 import machine
-from secrets import load_env
+from env_loader import load_env
 
 env = load_env()
 
