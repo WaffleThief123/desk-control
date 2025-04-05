@@ -13,6 +13,10 @@ TOPIC_HEIGHT = b"foxdesk/height"
 
 def connect():
     global client
+    print("env keys:", list(env.keys()))
+    print("MQTT_BROKER =", repr(env.get("MQTT_BROKER")))
+    print("MQTT_USER   =", repr(env.get("MQTT_USER")))
+    print("MQTT_PASS   =", repr(env.get("MQTT_PASS")))
     try:
         print("🌐 Connecting to MQTT broker with authentication...")
         client = MQTTClient(

@@ -12,6 +12,8 @@ WIFI_PASS = env.get("WIFI_PASS", "")
 def connect_wifi():
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
+    if not WIFI_SSID:
+        raise OSError("Wifi SSID Invalid")
     if not wlan.isconnected():
         print("Connecting to Wi-Fi...")
         wlan.connect(WIFI_SSID, WIFI_PASS)
