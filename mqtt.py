@@ -11,8 +11,14 @@ TOPIC_HEIGHT = b"foxdesk/height"
 def connect():
     global client
     try:
-        print("🌐 Connecting to MQTT broker...")
-        client = MQTTClient("foxdesk", "192.168.0.100", port=1883)
+        print("🌐 Connecting to MQTT broker with authentication...")
+        client = MQTTClient(
+            client_id="mqtt-user",
+            server="192.168.0.100",
+            port=1883,
+            user="your_username",
+            password="your_password"
+        )
         client.set_callback(mqtt_callback)
         client.connect()
         client.subscribe(TOPIC_CMD)
