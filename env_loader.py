@@ -1,4 +1,4 @@
-def load_env(path="/secrets.env"):
+def load_env(path="/.env"):
     env = {}
     try:
         with open(path) as f:
