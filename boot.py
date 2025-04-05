@@ -2,9 +2,12 @@ import network
 import time
 import mqtt
 import machine
+from secrets import load_env
 
-WIFI_SSID = ""
-WIFI_PASS = ""
+env = load_env()
+
+WIFI_SSID = env.get("WIFI_SSID", "")
+WIFI_PASS = env.get("WIFI_PASS", "")
 
 def connect_wifi():
     wlan = network.WLAN(network.STA_IF)
@@ -26,7 +29,7 @@ connect_wifi()
 mqtt.connect()
 
 # Wait a moment to let USB settle
-time.sleep(3)
+time.sleep(1)
 
 # Run main manually
 try:

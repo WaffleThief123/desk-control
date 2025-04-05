@@ -1,6 +1,4 @@
-from umqtt.simple import MQTTClient
-import time
-import uasyncio as asyncio
+env = load_env()
 
 client = None
 motor_ref = None
@@ -13,11 +11,11 @@ def connect():
     try:
         print("🌐 Connecting to MQTT broker with authentication...")
         client = MQTTClient(
-            client_id="mqtt-user",
-            server="192.168.0.100",
-            port=1883,
-            user="your_username",
-            password="your_password"
+            client_id=env.get("MQTT_USER", "mqtt-client"),
+            server=env.get("MQTT_BROKER"),
+            port=int(env.get("MQTT_PORT", 1883)),
+            user=env.get("MQTT_USER"),
+            password=env.get("MQTT_PASS")
         )
         client.set_callback(mqtt_callback)
         client.connect()
