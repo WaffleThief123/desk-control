@@ -20,7 +20,7 @@ def connect_wifi():
             time.sleep(0.5)
             retries += 1
     if wlan.isconnected():
-        print("Connected:", wlan.ifconfig())
+        print("Connected: IP =", wlan.ifconfig()[0])
     else:
         print("Wi-Fi connection failed.")
         machine.reset()
