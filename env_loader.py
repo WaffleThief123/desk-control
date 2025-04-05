@@ -11,7 +11,6 @@ def load_env(path="/.env"):
                     k = split_line[0]
                     v = split_line[1]
                     v = v.strip()
-                    print(v)
                     
                     if (v.startswith('"') and v.endswith('"')) or (v.startswith("'") and v.endswith("'")):
                         v = v[1:-1]
