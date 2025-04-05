@@ -51,7 +51,7 @@ class DeskMotor:
         time.sleep(0.01)
         self.relay_b.on()
 
-    def move_to_height(self, target_height_mm):
+    def move(self, target_height_mm):
         acceptable_delta = self.__acceptable_delta()
 
         current_height = self.sensor_reader_class.read_distance()
@@ -85,25 +85,24 @@ class DeskMotor:
         self.stop()
 
     def __estimate_gains(self, error):
-        # Self-tuning based on initial error
         base_kp = 0.02
         base_ki = 0.001
         base_kd = 0.01
-
         scale = min(max(abs(error) / 200, 0.5), 2.0)
         return PID(base_kp * scale, base_ki * scale, base_kd * scale)
+
     def __set_direction(self, direction: str):
-        """Set motor direction without delay"""
         if direction == "up":
             self.relay_b.off()
             self.relay_a.on()
         elif direction == "down":
             self.relay_a.off()
+            self.relay_b.on()
         else:
             self.stop()
 
     def move_pid(self, desired_height_in_mm, timeout_ms=3000):
-        sample_time = 0.1  # seconds
+        sample_time = 0.1
         max_time = timeout_ms / 1000
         t_start = time.ticks_ms()
 
@@ -123,7 +122,6 @@ class DeskMotor:
             error = desired_height_in_mm - current_height
             control = pid.compute(error, dt)
 
-            # Determine relay direction
             if control > 0:
                 direction = "up"
             elif control < 0:
@@ -131,14 +129,12 @@ class DeskMotor:
             else:
                 direction = None
 
-            # Change direction only if needed
             if direction != last_direction:
                 self.stop()
                 if direction:
                     self.__set_direction(direction)
                 last_direction = direction
 
-            # End condition
             if time.ticks_diff(now, t_start) > timeout_ms:
                 break
 
